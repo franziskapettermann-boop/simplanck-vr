@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>SIMPlanck Game Lab 0.7</title>
+<title>SIMPlanck Game Lab 0.8</title>
 <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
 <style>
 *{box-sizing:border-box}
@@ -58,7 +58,7 @@ video{width:min(94vw,850px);max-height:72vh}
 </a-scene></div>
 
 <div id="hud">
- <header><b>SIMPlanck</b> · GAME LAB 0.7<br><small>Mission 01 · Hausbesuch am Abend · <span id="room-name">Flur</span></small></header>
+ <header><b>SIMPlanck</b> · GAME LAB 0.8<br><small>Mission 01 · Hausbesuch am Abend · <span id="room-name">Flur</span></small></header>
  <div id="message">Sie arbeiten im ambulanten Pflegedienst und kommen zum Abendbesuch zu Frau Weber. Sie sitzt im Wohnzimmer. Begrüßen Sie sie zuerst. Danach handeln Sie selbstständig – die ganze Wohnung gehört dazu.</div>
  <div id="carry" hidden></div>
  <button id="end">Beenden</button><button id="menu">☰</button>
@@ -67,7 +67,7 @@ video{width:min(94vw,850px);max-height:72vh}
  <div id="hint">Links gehen · rechts wischen · Dinge antippen · Brille: „VR“</div>
  <div id="ki">Videos KI-generiert (Seedance, Adobe Firefly)</div>
  <button id="use" disabled>Gegenstand ansehen</button>
- <div id="panel" class="sheet" hidden><button id="close">Schließen</button><h3>Hausbesuch</h3><div id="report"><small>Hier erscheint nach „Beenden“ Ihr Protokoll.</small></div><button id="finish">Besuch beenden</button> <button onclick="location.reload()">Neustart</button><p><small>Frau Weber ist eine erfundene Person. Medikamente und Werte sind fiktiv. Die Videos sind KI-generiert (Seedance, Adobe Firefly).</small></p></div>
+ <div id="panel" class="sheet" hidden><button id="close">Schließen</button><h3>Hausbesuch</h3><div id="report"><small>Hier erscheint nach „Beenden“ Ihr Protokoll.</small></div><button id="finish">Besuch beenden</button> <button onclick="location.reload()">Neustart</button><p><small>Frau Weber ist eine erfundene Person. Medikamente und Werte sind fiktiv. Die Videos sind KI-generiert (Seedance, Adobe Firefly).</small></p><p><small>3D-Modelle aus den Khronos glTF Sample Assets: Küchenstuhl (SheenChair), Teetasse, Vase, Wasserflasche – CC0. Sofa „GlamVelvetSofa“ © 2021 Wayfair, LLC · Pflanze „DiffuseTransmissionPlant“ © 2024 Darmstadt Graphics Group GmbH · Lampe „LightsPunctualLamp“ © 2021 DGG · Schuh „MaterialsVariantsShoe“ © 2021 Shopify – jeweils CC BY 4.0 (creativecommons.org/licenses/by/4.0).</small></p></div>
  <div id="dlg" class="sheet" hidden></div>
  <div id="film" hidden><video id="video" controls playsinline></video><button id="skip">Zurück in die Wohnung</button><small>KI-generiertes Video</small></div>
 </div>
@@ -102,6 +102,8 @@ const H=2.6;
 function wall(x1,z1,x2,z2,gaps=[],col='#e4dccb'){const alongX=z1===z2,a=alongX?Math.min(x1,x2):Math.min(z1,z2),b=alongX?Math.max(x1,x2):Math.max(z1,z2);let cur=a;const segs=[];for(const g of gaps.slice().sort((p,q)=>p[0]-q[0])){segs.push([cur,g[0]]);cur=g[1];
   const m=(g[0]+g[1])/2,len=g[1]-g[0];if(alongX)box(m,2.35,z1,len,.5,.15,col);else box(x1,2.35,m,.15,.5,len,col)}segs.push([cur,b]);
  for(const[s,e]of segs){if(e-s<.01)continue;const m=(s+e)/2;if(alongX){box(m,H/2,z1,e-s,H,.15,col);block(s,e,z1-.08,z1+.08)}else{box(x1,H/2,m,.15,H,e-s,col);block(x1-.08,x1+.08,s,e)}}}
+function model(name,x,y,z,ry=0,sc=1,parent=room){const e=entity('a-entity',{'gltf-model':'url(models/'+name+'.glb)',position:[x,y,z].join(' '),rotation:'0 '+ry+' 0',scale:[sc,sc,sc].join(' ')},parent);
+ e.addEventListener('model-loaded',()=>{const rm=[];e.object3D.traverse(o=>{if(o.isLight)rm.push(o)});rm.forEach(o=>o.parent.remove(o))});return e}
 function rollatorModel(parent){for(const x of [-.3,.3]){box(x,.52,.3,.06,1,.06,'#737d83',parent);box(x,.52,-.3,.06,1,.06,'#737d83',parent);box(x,1.03,0,.07,.07,.7,'#343e45',parent);for(const z of [.3,-.3])sphere(x,.11,z,.11,'#29323a',parent)}box(0,.6,0,.64,.08,.5,'#353c40',parent)}
 
 // ---------- Grundriss ----------
@@ -123,17 +125,17 @@ box(-1.7,.43,-2.9,1.45,.65,1.3,'#667b69');box(-1.7,1.1,-3.48,1.45,1.2,.25,'#667b
 const person=entity('a-entity',{position:'-1.7 0 -2.85'});box(0,1.04,0,.52,.65,.34,'#c9b9a0',person);sphere(0,1.53,0,.22,'#d6aa8c',person);sphere(0,1.63,-.05,.23,'#b2b2ad',person);box(-.16,.62,.3,.23,.28,.65,'#716f63',person);box(.16,.62,.3,.23,.28,.65,'#716f63',person);box(-.16,.33,.58,.22,.62,.22,'#716f63',person);box(.16,.33,.58,.22,.62,.22,'#716f63',person);box(-.35,1,.1,.15,.5,.18,'#c9b9a0',person);box(.35,1,.1,.15,.5,.18,'#c9b9a0',person);
 spot('weber','Frau Weber',-1.7,1.2,-2.5,1.1,1.3,.7);
 box(.3,.67,-1.8,1.5,.13,1.1,'#795b40');for(const x of [-.35,.95])for(const z of [-2.2,-1.4])box(x,.32,z,.09,.65,.09,'#795b40');block(-.5,1.05,-2.4,-1.2);
-cyl(0,.84,-1.8,.07,.2,'#cfe6ee');spot('glass','Leeres Glas',0,.85,-1.8,.3,.3,.3);
+cyl(0,.84,-1.8,.07,.2,'#cfe6ee');model('DiffuseTransmissionTeacup',.35,.735,-2.05,20,1);spot('glass','Leeres Glas',0,.85,-1.8,.3,.3,.3);
 box(.65,.82,-1.8,.3,.18,.22,'#e8e8e5');box(.65,.92,-1.68,.19,.025,.11,'#394c49');spot('bp','Blutdruckgerät',.65,.85,-1.8,.4,.35,.35);
 const rug=box(-1.6,.025,-.3,2.3,.05,1.8,'#9a5144'),curled=box(-.5,.08,-.3,.15,.12,1.8,'#b76a50'),rugSpot=spot('rug','Teppich',-1.6,.12,-.3,2.3,.18,1.8);
-box(-3.8,.5,1,1.5,.65,2.7,'#8d7462');box(-4.45,1.05,1,.25,1.1,2.7,'#8d7462');box(-3.8,.8,-.25,1.5,.5,.25,'#8d7462');box(-3.8,.8,2.25,1.5,.5,.25,'#8d7462');block(-4.6,-3.05,-.5,2.5);
+model('GlamVelvetSofa',-4.1,0,1,90,1.15);block(-4.6,-3.05,-.5,2.5);
 box(2.5,1.75,-4.88,1.4,.85,.06,'#8b6848');box(2.5,1.75,-4.84,1.25,.7,.04,'#8faf84');
-cyl(-3.9,.16,-3.8,.28,.32,'#a1704e');for(let i=0;i<8;i++){const a=i*Math.PI/4;const l=entity('a-sphere',{position:[-3.9+Math.cos(a)*.25,.55+(i%3)*.14,-3.8+Math.sin(a)*.25].join(' '),radius:.22,scale:'1 1.8 .55',color:i%2?'#476b37':'#739452'});l.setAttribute('rotation','25 '+i*40+' 20')}block(-4.2,-3.6,-4.1,-3.5);
-cyl(-.35,.65,-3.9,.035,1.3,'#806a47');entity('a-cone',{position:'-.35 1.35 -3.9','radius-bottom':.32,'radius-top':.16,height:.42,material:'color:#ffe2a8;emissive:#ffcf7a;emissiveIntensity:.9'});
-box(2.8,.45,-4.4,2.1,.9,.65,'#79583d');for(let i=0;i<3;i++){box(2.1+i*.7,.47,-4.05,.65,.7,.05,'#98734e');box(2.1+i*.7,.65,-4.01,.13,.035,.04,'#c6ae7a')}block(1.7,3.9,-4.75,-4.05);
+model('DiffuseTransmissionPlant',-3.9,0,-3.8,30,1.3);block(-4.2,-3.6,-4.1,-3.5);
+model('LightsPunctualLamp',-.4,0,-4.1,180,1);
+box(2.8,.45,-4.4,2.1,.9,.65,'#79583d');model('GlassVaseFlowers',2.2,.9,-4.4,0,1.6);for(let i=0;i<3;i++){box(2.1+i*.7,.47,-4.05,.65,.7,.05,'#98734e');box(2.1+i*.7,.65,-4.01,.13,.035,.04,'#c6ae7a')}block(1.7,3.9,-4.75,-4.05);
 
 // ---------- Flur ----------
-const shoes=entity('a-entity',{position:'0 0 5.7'});box(-.12,.06,0,.12,.12,.3,'#3b2a22',shoes);box(.14,.06,.08,.12,.12,.3,'#3b2a22',shoes).setAttribute('rotation','0 25 0');const shoeSpot=spot('shoes','Schuhe im Weg',0,.12,5.7,.6,.25,.5);
+const shoes=entity('a-entity',{position:'0 0 5.7'});model('MaterialsVariantsShoe',-.12,0,0,80,1,shoes);model('MaterialsVariantsShoe',.16,0,.08,115,1,shoes);const shoeSpot=spot('shoes','Schuhe im Weg',0,.12,5.7,.6,.25,.5);
 box(4.8,.45,7.62,1.4,.9,.5,'#8a6a4c');block(4.05,5.55,7.35,8);box(4.4,.98,7.6,.34,.12,.22,'#e9ecea');sphere(4.4,1.06,7.6,.03,'#3fae5b');spot('base','Hausnotruf-Gerät',4.4,1.02,7.6,.45,.3,.35);
 const button=entity('a-entity',{position:'5.15 .93 7.55'});box(0,0,0,.1,.03,.1,'#d7dbdc',button);cyl(0,.025,0,.03,.02,'#c4372f',button);const buttonSpot=spot('button','Notrufknopf',5.15,.97,7.55,.35,.25,.35);
 box(3,1.55,5.1,1,.7,.04,'#b88a5a');box(2.75,1.55,5.13,.42,.55,.02,'#f6f3ea');box(3.25,1.6,5.13,.3,.35,.02,'#fff59a');spot('plan','Pinnwand mit Medikationsplan',3,1.55,5.25,1,.75,.25);
@@ -147,7 +149,7 @@ box(8.6,.9,1.5,.5,.06,.4,'#9aa3a6');cyl(8.82,1.08,1.5,.02,.3,'#b9c0c3');spot('ta
 box(8.55,.9,4.3,.8,1.8,.8,'#e9e9e4');box(8.13,1.2,4.0,.03,.5,.04,'#888');block(8.15,8.95,3.9,4.7);spot('fridge','Kühlschrank',8.3,.9,4.3,.5,1.8,.9);
 box(6.3,.72,1.6,1,.06,.8,'#a7835c');for(const x of [5.88,6.72])for(const z of [1.28,1.92])box(x,.36,z,.05,.72,.05,'#a7835c');block(5.75,6.85,1.15,2.05);
 box(6.3,.79,1.6,.42,.06,.16,'#4b88c9');for(let i=0;i<4;i++)box(6.14+i*.105,.83,1.6,.09,.02,.13,'#cfe4f7');spot('dosette','Tablettendosette',6.3,.82,1.6,.55,.25,.35);
-box(6.3,.45,2.5,.45,.06,.45,'#8a6a4c');
+model('SheenChair',6.3,0,2.45,180,1);block(5.9,6.7,2.15,2.75);
 
 // ---------- Bad ----------
 const puddle=entity('a-cylinder',{position:'.1 .005 9.4',radius:.45,height:.01,material:'color:#9fd3ea;opacity:.6;transparent:true'});const towel=box(.35,.03,9.3,.5,.04,.35,'#e8e2cf');const puddleSpot=spot('puddle','Nasser Boden, Handtuch',.15,.1,9.4,1.1,.2,.9);
@@ -157,7 +159,7 @@ box(-1.3,.05,8.85,.9,.08,.9,'#e8ecec');cyl(-1.65,2,8.5,.015,.3,'#b9c0c3');
 
 // ---------- Schlafzimmer ----------
 box(-7.6,.3,1.2,1.6,.5,2.1,'#7c6a8c');box(-7.6,.6,1.3,1.5,.12,1.9,'#e9e4f0');box(-7.6,.72,.4,.9,.14,.4,'#ffffff');box(-7.6,.6,2.25,1.6,.6,.08,'#6b5236');block(-8.45,-6.75,.1,2.3);
-box(-6.45,.3,-.3,.5,.6,.45,'#8a6a4c');block(-6.75,-6.15,-.6,0);box(-6.5,.61,-.3,.21,.01,.29,'#fbfbf6');cyl(-6.3,.72,-.25,.04,.22,'#cfe6ee');spot('log','Trinkprotokoll',-6.45,.68,-.3,.5,.25,.45);
+box(-6.45,.3,-.3,.5,.6,.45,'#8a6a4c');block(-6.75,-6.15,-.6,0);box(-6.5,.61,-.3,.21,.01,.29,'#fbfbf6');model('WaterBottle',-6.3,.73,-.25,0,1);spot('log','Trinkprotokoll',-6.45,.68,-.3,.5,.25,.45);
 box(-8.7,1,4,.55,2,1.5,'#9b7b58');block(-9,-8.4,3.2,4.8);
 const rollator=entity('a-entity',{position:'-6.2 0 3.6'});rollatorModel(rollator);const rollSpot=spot('rollator','Rollator',-6.2,.6,3.6,.9,1.2,.9);
 
