@@ -1,76 +1,313 @@
-<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>SIMPlanck Game Lab 0.6</title><script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script><style>*{box-sizing:border-box}body{margin:0;background:#142334;color:#fff;font:16px system-ui}#world{position:fixed;inset:0}#hud{position:fixed;inset:0;pointer-events:none;z-index:5}header{background:#122337e8;padding:12px 16px}b{color:#ff9c43}#message{margin:10px;background:#122337e8;padding:12px;border-radius:10px;max-width:570px}button,label,details{pointer-events:auto}button{border:1px solid #7190a6;background:#183c57ef;color:white;border-radius:12px;padding:13px;font:inherit;touch-action:none}#controls{position:absolute;bottom:24px;left:15px;display:grid;grid-template-columns:repeat(3,52px);gap:5px}#controls button{font-size:22px;padding:10px}#use{position:absolute;right:16px;bottom:32px;background:#b65d17;max-width:46%}#menu{position:absolute;top:10px;right:10px}#panel{position:absolute;top:65px;right:10px;max-height:75vh;overflow:auto;width:min(340px,94vw);background:#172c40;padding:16px;border-radius:12px;pointer-events:auto}#panel[hidden],#film[hidden]{display:none}input{max-width:100%;margin:7px 0}#film{position:absolute;inset:0;background:#000d;display:flex;align-items:center;justify-content:center;flex-direction:column;pointer-events:auto}video{width:min(94vw,850px);max-height:72vh}#cross{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:24px;text-shadow:0 1px 4px black}#finish{margin:8px 0}small{color:#b9cbd8}html,body{width:100%;height:100%;overflow:hidden;overscroll-behavior:none}#world a-scene{width:100%;height:100%;position:absolute;inset:0}#hud{width:100%;height:100%;height:100dvh}#controls{display:block;width:112px;height:112px;bottom:max(18px,env(safe-area-inset-bottom));left:16px;border-radius:50%;background:#10263ba8;border:2px solid #ffffff66;pointer-events:auto;touch-action:none}#knob{position:absolute;left:34px;top:34px;width:40px;height:40px;border-radius:50%;background:#f4b36b;pointer-events:none}#use{bottom:max(28px,env(safe-area-inset-bottom));font-size:15px;max-width:48%;min-height:52px}#message{font-size:14px;max-width:calc(100% - 20px);line-height:1.35}#cross{font-size:18px}header{font-size:15px;padding-right:150px}#panel{z-index:10}#film{z-index:12}#hint{position:absolute;bottom:150px;left:16px;font-size:11px;background:#142334bc;padding:5px;border-radius:4px}#end{position:absolute;top:10px;right:62px;font-size:13px;padding:9px 10px;background:#3c2a1c;border-color:#b65d17}#ki{position:absolute;bottom:max(6px,env(safe-area-inset-bottom));right:16px;font-size:10px;color:#b9cbd8;transform:translateY(-92px)}#report ul{padding-left:0;list-style:none;margin:8px 0}#report li{margin:3px 0}#film small{margin-top:6px}</style></head><body><div id="world"><a-scene embedded vr-mode-ui="enabled:true" webxr="optionalFeatures:local-floor" renderer="antialias:true;colorManagement:true" background="color:#1c2738"><a-entity light="type:ambient;intensity:0.45;color:#ffe3c2"></a-entity><a-entity light="type:directional;intensity:0.25;color:#9fb4d8" position="-3 6 2"></a-entity><a-entity light="type:point;intensity:1.3;distance:7;decay:1.6;color:#ffc98a" position="-.35 1.5 -3.6"></a-entity><a-entity light="type:point;intensity:.5;distance:6;color:#ffd9a8" position="2 2.6 1"></a-entity><a-entity id="rig" position="0 0 3"><a-entity id="cam" camera position="0 1.6 0" look-controls="touchEnabled:true;mouseEnabled:true" wasd-controls="enabled:false"><a-entity id="ray" raycaster="objects:.usable;far:3;interval:100"></a-entity><a-entity id="vrpanel" position="0 -0.32 -1.1" visible="false"><a-plane id="vrbg" width="1.05" height="0.34" material="color:#122337;opacity:0.88;transparent:true;shader:flat"></a-plane><a-text id="vrtext" value="" width="0.98" wrap-count="46" color="#ffffff" anchor="left" baseline="center" position="-0.49 0 0.01"></a-text></a-entity></a-entity><a-entity id="lhand" laser-controls="hand:left" raycaster="objects:.usable,.vrbtn;far:6;lineColor:#f4b36b;lineOpacity:0.7"></a-entity><a-entity id="rhand" laser-controls="hand:right" raycaster="objects:.usable,.vrbtn;far:6;lineColor:#f4b36b;lineOpacity:0.7"></a-entity></a-entity><a-plane id="vrscreen" class="vrbtn" width="1.6" height="0.9" visible="false" material="shader:flat;src:#video"></a-plane><a-entity id="room"></a-entity></a-scene></div><div id="hud"><header><b>SIMPlanck</b> · GAME LAB 0.6<br><small>Mission 01 · Hausbesuch am Abend · mit VR-Brille: unten rechts „VR“</small></header><div id="message">Sie kommen zum Abendbesuch zu Frau Weber. Sie sitzt im Sessel. Gehen Sie zu ihr und tippen Sie sie an. Danach handeln Sie selbstständig.</div><button id="end">Beenden</button><div id="cross">+</div><button id="menu">☰</button><div id="controls" aria-label="Joystick"><div id="knob"></div></div><div id="hint">Links bewegen · rechts wischen · Objekt antippen</div><button id="use" disabled>Gegenstand ansehen</button><div id="ki">Videos KI-generiert (Seedance, Adobe Firefly)</div><div id="panel" hidden><button id="close">Schließen</button><h3>Hausbesuch</h3><div id="report"><small>Hier erscheint nach „Besuch beenden“ Ihr Handlungsprotokoll.</small></div><button id="finish">Besuch beenden</button> <button onclick="location.reload()">Neustart</button><p><small>Frau Weber ist eine erfundene Person. Die Videos sind KI-generiert (Seedance, Adobe Firefly), Stand 25.11.2026.</small></p></div><div id="film" hidden><video id="video" controls playsinline></video><button id="skip">Zurück ins Zimmer</button><small>KI-generiertes Video</small></div></div><script>
-const fw=new AFRAME.THREE.Vector3();
-const room=document.querySelector('#room'),rig=document.querySelector('#rig'),cam=document.querySelector('#cam'),ray=document.querySelector('#ray'),msg=document.querySelector('#message'),use=document.querySelector('#use'),panel=document.querySelector('#panel'),film=document.querySelector('#film'),video=document.querySelector('#video');
-let history=[],done=new Set(),clips=[null,null,null],target=null,move=null,elapsed=0,unsafe=false,finished=false,joy={x:0,y:0},last=performance.now(),warned=false,attempted=false;const obstacles=[];
-function entity(tag,attrs,parent=room){let e=document.createElement(tag);for(let k in attrs)e.setAttribute(k,attrs[k]);parent.appendChild(e);return e}
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>SIMPlanck Game Lab 0.7</title>
+<script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;overscroll-behavior:none;background:#142334;color:#fff;font:16px system-ui}
+b{color:#ff9c43}small{color:#b9cbd8}
+#world{position:fixed;inset:0}#world a-scene{width:100%;height:100%;position:absolute;inset:0}
+#hud{position:fixed;inset:0;pointer-events:none;z-index:5;height:100dvh}
+header{background:#122337e8;padding:12px 16px;padding-top:max(12px,env(safe-area-inset-top));padding-right:150px;font-size:15px}
+#room-name{color:#f4b36b}
+#message{margin:10px;background:#122337e8;padding:12px;border-radius:10px;max-width:min(570px,calc(100% - 20px));font-size:14px;line-height:1.35}
+#carry{margin:0 10px;display:inline-block;background:#b65d17;padding:6px 10px;border-radius:8px;font-size:13px}#carry[hidden]{display:none}
+button,label,details,input{pointer-events:auto}
+button{border:1px solid #7190a6;background:#183c57ef;color:#fff;border-radius:12px;padding:12px;font:inherit;touch-action:manipulation;min-height:44px}
+#menu{position:absolute;top:max(10px,env(safe-area-inset-top));right:10px}
+#end{position:absolute;top:max(10px,env(safe-area-inset-top));right:62px;font-size:13px;padding:9px 10px;background:#3c2a1c;border-color:#b65d17}
+#controls{position:absolute;width:112px;height:112px;bottom:max(18px,env(safe-area-inset-bottom));left:16px;border-radius:50%;background:#10263ba8;border:2px solid #ffffff66;pointer-events:auto;touch-action:none}
+#knob{position:absolute;left:34px;top:34px;width:40px;height:40px;border-radius:50%;background:#f4b36b;pointer-events:none}
+#use{position:absolute;right:16px;bottom:max(28px,env(safe-area-inset-bottom));background:#b65d17;max-width:48%;font-size:15px;min-height:52px}
+#cross{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:18px;text-shadow:0 1px 4px #000}
+#hint{position:absolute;bottom:150px;left:16px;font-size:11px;background:#142334bc;padding:5px;border-radius:4px}
+#ki{position:absolute;bottom:max(96px,calc(env(safe-area-inset-bottom) + 90px));right:16px;font-size:10px;color:#b9cbd8}
+.sheet{position:absolute;pointer-events:auto;background:#172c40;border-radius:12px;padding:16px;overflow:auto}
+#panel{top:65px;right:10px;max-height:75vh;width:min(360px,94vw);z-index:10}
+#dlg{left:50%;top:50%;transform:translate(-50%,-50%);width:min(460px,94vw);max-height:84vh;z-index:11;border:1px solid #f4b36b88}
+#dlg h3{margin:0 0 8px;color:#f4b36b;font-size:17px}#dlg p{margin:6px 0;line-height:1.4;font-size:15px}
+#dlg .opts{display:grid;gap:8px;margin-top:10px}#dlg .opts button{text-align:left}
+#dlg label{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:6px 0}
+#dlg input{width:110px;font-size:16px;padding:8px;border-radius:8px;border:1px solid #7190a6;background:#0f2234;color:#fff}
+#dlg table{border-collapse:collapse;width:100%;font-size:14px;margin:6px 0}#dlg td,#dlg th{border:1px solid #33506a;padding:5px;text-align:left}
+#film{position:absolute;inset:0;background:#000d;display:flex;align-items:center;justify-content:center;flex-direction:column;pointer-events:auto;z-index:12}
+video{width:min(94vw,850px);max-height:72vh}
+#panel[hidden],#film[hidden],#dlg[hidden]{display:none}
+#report ul{padding-left:0;list-style:none;margin:8px 0}#report li{margin:4px 0;font-size:14px}
+</style>
+</head>
+<body>
+<div id="world"><a-scene embedded vr-mode-ui="enabled:true" webxr="optionalFeatures:local-floor" renderer="antialias:true;colorManagement:true" background="color:#1c2738">
+<a-entity light="type:ambient;intensity:0.5;color:#ffe3c2"></a-entity>
+<a-entity light="type:directional;intensity:0.2;color:#9fb4d8" position="-3 6 2"></a-entity>
+<a-entity id="rig" position="7.6 0 6.5" rotation="0 90 0">
+ <a-entity id="cam" camera position="0 1.6 0" look-controls="touchEnabled:true;mouseEnabled:true" wasd-controls="enabled:false">
+  <a-entity id="ray" raycaster="objects:.usable;far:3;interval:100"></a-entity>
+  <a-entity id="vrpanel" position="0 -0.34 -1.1" visible="false"><a-plane id="vrbg" width="1.05" height="0.36" material="color:#122337;opacity:0.88;transparent:true;shader:flat"></a-plane><a-text id="vrtext" value="" width="0.98" wrap-count="46" color="#ffffff" anchor="left" baseline="center" position="-0.49 0 0.01"></a-text></a-entity>
+  <a-entity id="carryvis" position="0.24 -0.3 -0.55" visible="false"></a-entity>
+ </a-entity>
+ <a-entity id="lhand" laser-controls="hand:left" raycaster="objects:.usable,.vrbtn;far:6;lineColor:#f4b36b;lineOpacity:0.7"></a-entity>
+ <a-entity id="rhand" laser-controls="hand:right" raycaster="objects:.usable,.vrbtn;far:6;lineColor:#f4b36b;lineOpacity:0.7"></a-entity>
+</a-entity>
+<a-entity id="room"></a-entity>
+<a-plane id="vrscreen" width="1.6" height="0.9" visible="false" material="shader:flat;src:#video"></a-plane>
+<a-entity id="vrdlg" visible="false"></a-entity>
+</a-scene></div>
+
+<div id="hud">
+ <header><b>SIMPlanck</b> · GAME LAB 0.7<br><small>Mission 01 · Hausbesuch am Abend · <span id="room-name">Flur</span></small></header>
+ <div id="message">Sie arbeiten im ambulanten Pflegedienst und kommen zum Abendbesuch zu Frau Weber. Sie sitzt im Wohnzimmer. Begrüßen Sie sie zuerst. Danach handeln Sie selbstständig – die ganze Wohnung gehört dazu.</div>
+ <div id="carry" hidden></div>
+ <button id="end">Beenden</button><button id="menu">☰</button>
+ <div id="cross">+</div>
+ <div id="controls" aria-label="Joystick"><div id="knob"></div></div>
+ <div id="hint">Links gehen · rechts wischen · Dinge antippen · Brille: „VR“</div>
+ <div id="ki">Videos KI-generiert (Seedance, Adobe Firefly)</div>
+ <button id="use" disabled>Gegenstand ansehen</button>
+ <div id="panel" class="sheet" hidden><button id="close">Schließen</button><h3>Hausbesuch</h3><div id="report"><small>Hier erscheint nach „Beenden“ Ihr Protokoll.</small></div><button id="finish">Besuch beenden</button> <button onclick="location.reload()">Neustart</button><p><small>Frau Weber ist eine erfundene Person. Medikamente und Werte sind fiktiv. Die Videos sind KI-generiert (Seedance, Adobe Firefly).</small></p></div>
+ <div id="dlg" class="sheet" hidden></div>
+ <div id="film" hidden><video id="video" controls playsinline></video><button id="skip">Zurück in die Wohnung</button><small>KI-generiertes Video</small></div>
+</div>
+
+<script>
+{
+const THREE=AFRAME.THREE,$=s=>document.querySelector(s);
+const room=$('#room'),rig=$('#rig'),cam=$('#cam'),ray=$('#ray'),msg=$('#message'),use=$('#use'),panel=$('#panel'),film=$('#film'),video=$('#video'),dlg=$('#dlg'),carryEl=$('#carry');
+const vrtext=$('#vrtext'),vrpanel=$('#vrpanel'),vrbg=$('#vrbg'),vrscreen=$('#vrscreen'),vrdlg=$('#vrdlg'),carryvis=$('#carryvis'),sc=$('a-scene');
+const fw=new THREE.Vector3(),tmpP=new THREE.Vector3();
+let history=[],done=new Set(),found=new Set(),target=null,move=null,elapsed=0,unsafe=false,finished=false,joy={x:0,y:0},last=performance.now(),warned=false,attempted=false;
+let greeted=false,rude=false,inVR=false,carry=null,dialogOpen=false,sbarScore=null,bpOk=false,drinkOk=false,medOk=null,hazards=new Set();
+const obstacles=[];
+const CLIPS=['begruessung.mp4','trinkmenge.mp4',null]; // 0 Begrüßung · 1 Trinkmenge · 2 Aufstehen (noch offen)
+
+// ---------- Bausteine ----------
+function entity(tag,attrs,parent=room){const e=document.createElement(tag);for(const k in attrs)e.setAttribute(k,attrs[k]);parent.appendChild(e);return e}
 function box(x,y,z,w,h,d,c,parent=room){return entity('a-box',{position:[x,y,z].join(' '),width:w,height:h,depth:d,color:c},parent)}
 function sphere(x,y,z,r,c,parent=room){return entity('a-sphere',{position:[x,y,z].join(' '),radius:r,color:c},parent)}
+function cyl(x,y,z,r,h,c,parent=room){return entity('a-cylinder',{position:[x,y,z].join(' '),radius:r,height:h,color:c},parent)}
 function label(t,x,y,z,parent=room){return entity('a-text',{value:t,position:[x,y,z].join(' '),align:'center',width:3,color:'#ffffff',side:'double'},parent)}
-function spot(id,title,x,y,z,w,h,d){let e=box(x,y,z,w,h,d,'#ec933b');e.setAttribute('material','opacity:0.13;transparent:true');e.classList.add('usable');e.dataset.id=id;e.dataset.title=title;let tag=label(title,x,y+h/2+.18,z+.03);tag.setAttribute('visible',false);e.tag=tag;return e}
-// apartment shell
-box(0,-.07,0,10,.14,10,'#b09570');box(0,1.5,-5,10,3,.15,'#e7ddc8');box(-5,1.5,0,.15,3,10,'#d6d2bf');box(5,1.5,0,.15,3,10,'#e7ddc8');box(0,1.5,5,10,3,.15,'#d6d2bf');box(0,3,0,10,.1,10,'#f4f0e5');
-// window and curtains
-box(-2.7,1.9,-4.88,2.6,1.6,.08,'#243650');box(-2.7,1.9,-4.8,.07,1.6,.08,'#fff');box(-2.7,1.9,-4.8,2.6,.07,.08,'#fff');box(-4,1.8,-4.7,.35,2.3,.12,'#b0a78f');box(-1.4,1.8,-4.7,.35,2.3,.12,'#b0a78f');
-// armchair and patient
-box(-1.7,.43,-2.9,1.45,.65,1.3,'#667b69');box(-1.7,1.1,-3.48,1.45,1.2,.25,'#667b69');box(-2.35,.77,-2.9,.24,.65,1.3,'#667b69');box(-1.05,.77,-2.9,.24,.65,1.3,'#667b69');
-let person=entity('a-entity',{position:'-1.7 0 -2.85'});box(0,1.04,0,.52,.65,.34,'#b9aa94',person);sphere(0,1.53,0,.22,'#d6aa8c',person);sphere(0,1.63,-.05,.23,'#b2b2ad',person);box(-.16,.62,.3,.23,.28,.65,'#716f63',person);box(.16,.62,.3,.23,.28,.65,'#716f63',person);box(-.16,.33,.58,.22,.62,.22,'#716f63',person);box(.16,.33,.58,.22,.62,.22,'#716f63',person);box(-.35,1,.1,.15,.5,.18,'#b9aa94',person);box(.35,1,.1,.15,.5,.18,'#b9aa94',person);
-spot('talk','Frau Weber',-1.7,1.3,-2.5,1.1,1.2,.6);spot('sit','Sessel / Sicherheit',-2.6,.6,-2.3,.5,.8,.5);
-// table, water, pressure device
-box(.3,.67,-1.8,1.5,.13,1.1,'#795b40');for(let x of [-.35,.95])for(let z of [-2.2,-1.4])box(x,.32,z,.09,.65,.09,'#795b40');entity('a-cylinder',{position:'.0 .84 -1.8',radius:.09,height:.23,color:'#96d8eb',opacity:.8});box(.65,.82,-1.8,.3,.18,.22,'#e8e8e5');spot('water','Wasser',0,.85,-1.8,.35,.35,.35);spot('bp','Blutdruckgerät',.65,.85,-1.8,.4,.35,.35);
-// rug and rollator
-let rug=box(-1.6,.025,-.3,2.3,.05,1.8,'#9a5144');let curled=box(-.5,.08,-.3,.15,.12,1.8,'#b76a50');let rugSpot=spot('rug','Teppich',-1.6,.12,-.3,2.3,.18,1.8);
-for(let x of [1.7,2.45]){box(x,.52,-2.7,.07,1,.07,'#737d83');box(x,.52,-3.35,.07,1,.07,'#737d83');box(x,1.03,-3,.08,.08,.8,'#343e45');for(let z of [-2.7,-3.35])sphere(x,.12,z,.12,'#29323a')}box(2.07,.6,-3,.72,.1,.55,'#353c40');spot('move','Rollator / Mobilisation',2.07,.75,-2.9,1.0,1.2,.9);
-// door: end visit
-box(-2,1.05,4.9,1,2.1,.08,'#6b4f37');sphere(-1.62,1.05,4.83,.04,'#c6ae7a');spot('end','Besuch beenden',-2,1.05,4.72,1,2.1,.25);
-// kitchen corner and telephone
-box(3.6,.48,1.8,2.1,.96,1,'#c6c0ae');box(3.6,1,1.8,2.2,.1,1.05,'#626f73');box(3.7,1.09,1.6,.18,.08,.3,'#26353f');spot('call','Telefon',3.7,1.15,1.6,.5,.35,.45);
-box(3.8,.8,3.8,1.5,1.6,1,'#dddcd3');box(3.8,1.25,3.26,.75,.06,.05,'#787878');label('Küchenbereich',3.8,2,3.15);
-// sofa and pictures
-box(-3.8,.5,1,1.5,.65,2.7,'#8d7462');box(-4.45,1.05,1,.25,1.1,2.7,'#8d7462');box(-3.8,.8,-.25,1.5,.5,.25,'#8d7462');box(-3.8,.8,2.25,1.5,.5,.25,'#8d7462');box(2.5,1.95,-4.86,1.4,.85,.08,'#8b6848');box(2.5,1.95,-4.8,1.25,.7,.05,'#8faf84');
-// Procedural textures and furnishing details; no external asset downloads.
-const THREE=AFRAME.THREE;
-function texture(kind){let c=document.createElement('canvas');c.width=c.height=256;let g=c.getContext('2d');let seed=13;function rnd(){seed=(seed*1664525+1013904223)>>>0;return seed/4294967296}g.fillStyle=kind==='wood'?'#b08b61':'#8b9a82';g.fillRect(0,0,256,256);for(let i=0;i<1800;i++){let q=rnd();g.fillStyle='rgba('+ (q>.5?'255,255,255':'36,24,15')+','+(rnd()*.13)+')';g.fillRect(rnd()*256,rnd()*256,kind==='wood'?20+rnd()*70:1+rnd()*3,1+rnd()*2)}if(kind==='wood'){g.strokeStyle='#785b41';for(let y=0;y<256;y+=32){g.beginPath();g.moveTo(0,y);g.lineTo(256,y);g.stroke();g.beginPath();g.moveTo((y%64)*3+24,y);g.lineTo((y%64)*3+24,y+32);g.stroke()}}let t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.colorSpace=THREE.SRGBColorSpace;return t}
-let floor=room.querySelector('a-box'),wood=texture('wood');wood.repeat.set(7,7);function applyMap(e,t){let set=()=>{let m=e.getObject3D('mesh');if(m){m.material.map=t;m.material.color.set('#ffffff');m.material.needsUpdate=true}};e.addEventListener('object3dset',set);set()}applyMap(floor,wood);
-for(let x=-4.5;x<5;x+=1)box(x,.08,-4.8,.95,.14,.1,'#ad9277');for(let z=-4.5;z<5;z+=1){box(-4.8,.08,z,.1,.14,.95,'#ad9277');box(4.8,.08,z,.1,.14,.95,'#ad9277')}
-for(let i=0;i<9;i++)box(-3.95+i*.03,1.8,-4.65,.045,2.3,.15,i%2?'#b8ad97':'#c8bea8');
-entity('a-cylinder',{position:'-3.9 .16 -3.8',radius:.28,height:.32,color:'#a1704e'});for(let i=0;i<8;i++){let angle=i*Math.PI/4;let leaf=entity('a-sphere',{position:[-3.9+Math.cos(angle)*.25,.55+(i%3)*.14,-3.8+Math.sin(angle)*.25].join(' '),radius:.22,scale:'1 1.8 .55',color:i%2?'#476b37':'#739452'});leaf.setAttribute('rotation','25 '+i*40+' 20')}
-entity('a-cylinder',{position:'-.35 .65 -3.9',radius:.035,height:1.3,color:'#806a47'});entity('a-cone',{position:'-.35 1.35 -3.9','radius-bottom':.32,'radius-top':.16,height:.42,material:'color:#ffe2a8;emissive:#ffcf7a;emissiveIntensity:.9'});
-box(2.8,.45,-4.4,2.1,.9,.65,'#79583d');for(let i=0;i<3;i++){box(2.1+i*.7,.47,-4.05,.65,.7,.05,'#98734e');box(2.1+i*.7,.65,-4.01,.13,.035,.04,'#c6ae7a')}
-box(.65,.92,-1.68,.19,.025,.11,'#394c49');label('95 / 60',.65,.96,-1.59).setAttribute('visible',false);
-obstacles.push([-2.5,-.9,-3.6,-2.3],[-.5,1.05,-2.4,-1.2],[1.6,2.55,-3.5,-2.55],[-4.6,-3.05,-.5,2.5],[2.5,4.7,1.2,2.4],[3.0,4.6,3.2,4.5]);
-let inVR=false;const vrtext=document.querySelector('#vrtext'),vrpanel=document.querySelector('#vrpanel'),vrbg=document.querySelector('#vrbg'),vrscreen=document.querySelector('#vrscreen');
+function spot(id,title,x,y,z,w,h,d){const e=box(x,y,z,w,h,d,'#ec933b');e.setAttribute('material','color:#ec933b;opacity:0.12;transparent:true');e.classList.add('usable');e.dataset.id=id;e.dataset.title=title;const t=label(title,x,y+h/2+.18,z);t.setAttribute('visible',false);e.tag=t;return e}
+function block(x1,x2,z1,z2){obstacles.push([x1,x2,z1,z2])}
+function refreshRays(){document.querySelectorAll('[raycaster]').forEach(e=>{const r=e.components.raycaster;if(r)r.refreshObjects()})}
+function texture(kind){const c=document.createElement('canvas');c.width=c.height=256;const g=c.getContext('2d');let seed=13;const rnd=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296};g.fillStyle=kind==='wood'?'#b08b61':'#d9dcd6';g.fillRect(0,0,256,256);
+ if(kind==='wood'){for(let i=0;i<1800;i++){const q=rnd();g.fillStyle='rgba('+(q>.5?'255,255,255':'36,24,15')+','+(rnd()*.13)+')';g.fillRect(rnd()*256,rnd()*256,20+rnd()*70,1+rnd()*2)}g.strokeStyle='#785b41';for(let y=0;y<256;y+=32){g.beginPath();g.moveTo(0,y);g.lineTo(256,y);g.stroke();g.beginPath();g.moveTo((y%64)*3+24,y);g.lineTo((y%64)*3+24,y+32);g.stroke()}}
+ else{g.strokeStyle='#a9b0ad';g.lineWidth=3;for(let i=0;i<=256;i+=64){g.beginPath();g.moveTo(i,0);g.lineTo(i,256);g.stroke();g.beginPath();g.moveTo(0,i);g.lineTo(256,i);g.stroke()}}
+ const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.colorSpace=THREE.SRGBColorSpace;return t}
+function applyMap(e,t){const set=()=>{const m=e.getObject3D('mesh');if(m){m.material.map=t;m.material.color.set('#ffffff');m.material.needsUpdate=true}};e.addEventListener('object3dset',set);set()}
+function floor(x1,x2,z1,z2,kind){const f=box((x1+x2)/2,-.07,(z1+z2)/2,x2-x1,.14,z2-z1,'#b09570');const t=texture(kind);t.repeat.set((x2-x1)*(kind==='wood'?.7:1.2),(z2-z1)*(kind==='wood'?.7:1.2));applyMap(f,t)}
+const H=2.6;
+function wall(x1,z1,x2,z2,gaps=[],col='#e4dccb'){const alongX=z1===z2,a=alongX?Math.min(x1,x2):Math.min(z1,z2),b=alongX?Math.max(x1,x2):Math.max(z1,z2);let cur=a;const segs=[];for(const g of gaps.slice().sort((p,q)=>p[0]-q[0])){segs.push([cur,g[0]]);cur=g[1];
+  const m=(g[0]+g[1])/2,len=g[1]-g[0];if(alongX)box(m,2.35,z1,len,.5,.15,col);else box(x1,2.35,m,.15,.5,len,col)}segs.push([cur,b]);
+ for(const[s,e]of segs){if(e-s<.01)continue;const m=(s+e)/2;if(alongX){box(m,H/2,z1,e-s,H,.15,col);block(s,e,z1-.08,z1+.08)}else{box(x1,H/2,m,.15,H,e-s,col);block(x1-.08,x1+.08,s,e)}}}
+function rollatorModel(parent){for(const x of [-.3,.3]){box(x,.52,.3,.06,1,.06,'#737d83',parent);box(x,.52,-.3,.06,1,.06,'#737d83',parent);box(x,1.03,0,.07,.07,.7,'#343e45',parent);for(const z of [.3,-.3])sphere(x,.11,z,.11,'#29323a',parent)}box(0,.6,0,.64,.08,.5,'#353c40',parent)}
+
+// ---------- Grundriss ----------
+// Wohnzimmer x -5..5 z -5..5 · Schlafzimmer x -9..-5 z -1..5 · Küche x 5..9 z 0..5 · Flur x -9..9 z 5..8 · Bad x -2..2 z 8..11
+floor(-5,5,-5,5,'wood');floor(-9,-5,-1,5,'wood');floor(-9,9,5,8,'wood');floor(5,9,0,5,'tile');floor(-2,2,8,11,'tile');
+box(0,H,3,18.2,.08,16.2,'#f4f0e5');
+wall(-5,-5,5,-5);wall(-5,-5,-5,5);wall(5,-5,5,5);
+wall(-9,5,9,5,[[-7.6,-6.4],[-.6,.6],[6.4,7.6]]);
+wall(-9,-1,-9,8);wall(-9,-1,-5,-1);wall(5,0,9,0);wall(9,0,9,8,[[5.9,7.1]]);
+wall(-9,8,9,8,[[-.6,.6]]);wall(-2,8,-2,11,[],'#cfe0e3');wall(2,8,2,11,[],'#cfe0e3');wall(-2,11,2,11,[],'#cfe0e3');
+function roomAt(x,z){if(z>8)return'Bad';if(z>5)return'Flur';if(x<-5)return'Schlafzimmer';if(x>5)return'Küche';return'Wohnzimmer'}
+// Licht je Raum
+for(const[x,z,i]of[[-.35,-3.6,1.2],[2,1,.5],[-7,2,.7],[7,2.5,.8],[3,6.5,.6],[-6,6.5,.4],[0,9.5,.7]])entity('a-entity',{light:'type:point;intensity:'+i+';distance:7;decay:1.6;color:#ffcf96',position:x+' 2.3 '+z});
+
+// ---------- Wohnzimmer ----------
+box(-2.7,1.6,-4.9,2.6,1.3,.06,'#243650');box(-2.7,1.6,-4.85,.07,1.3,.06,'#fff');box(-2.7,1.6,-4.85,2.6,.07,.06,'#fff');
+for(let i=0;i<9;i++)box(-3.95+i*.03,1.35,-4.75,.045,2.2,.12,i%2?'#b8ad97':'#c8bea8');box(-1.4,1.35,-4.75,.35,2.2,.12,'#b0a78f');
+box(-1.7,.43,-2.9,1.45,.65,1.3,'#667b69');box(-1.7,1.1,-3.48,1.45,1.2,.25,'#667b69');box(-2.35,.77,-2.9,.24,.65,1.3,'#667b69');box(-1.05,.77,-2.9,.24,.65,1.3,'#667b69');block(-2.5,-.9,-3.6,-2.3);
+const person=entity('a-entity',{position:'-1.7 0 -2.85'});box(0,1.04,0,.52,.65,.34,'#c9b9a0',person);sphere(0,1.53,0,.22,'#d6aa8c',person);sphere(0,1.63,-.05,.23,'#b2b2ad',person);box(-.16,.62,.3,.23,.28,.65,'#716f63',person);box(.16,.62,.3,.23,.28,.65,'#716f63',person);box(-.16,.33,.58,.22,.62,.22,'#716f63',person);box(.16,.33,.58,.22,.62,.22,'#716f63',person);box(-.35,1,.1,.15,.5,.18,'#c9b9a0',person);box(.35,1,.1,.15,.5,.18,'#c9b9a0',person);
+spot('weber','Frau Weber',-1.7,1.2,-2.5,1.1,1.3,.7);
+box(.3,.67,-1.8,1.5,.13,1.1,'#795b40');for(const x of [-.35,.95])for(const z of [-2.2,-1.4])box(x,.32,z,.09,.65,.09,'#795b40');block(-.5,1.05,-2.4,-1.2);
+cyl(0,.84,-1.8,.07,.2,'#cfe6ee');spot('glass','Leeres Glas',0,.85,-1.8,.3,.3,.3);
+box(.65,.82,-1.8,.3,.18,.22,'#e8e8e5');box(.65,.92,-1.68,.19,.025,.11,'#394c49');spot('bp','Blutdruckgerät',.65,.85,-1.8,.4,.35,.35);
+const rug=box(-1.6,.025,-.3,2.3,.05,1.8,'#9a5144'),curled=box(-.5,.08,-.3,.15,.12,1.8,'#b76a50'),rugSpot=spot('rug','Teppich',-1.6,.12,-.3,2.3,.18,1.8);
+box(-3.8,.5,1,1.5,.65,2.7,'#8d7462');box(-4.45,1.05,1,.25,1.1,2.7,'#8d7462');box(-3.8,.8,-.25,1.5,.5,.25,'#8d7462');box(-3.8,.8,2.25,1.5,.5,.25,'#8d7462');block(-4.6,-3.05,-.5,2.5);
+box(2.5,1.75,-4.88,1.4,.85,.06,'#8b6848');box(2.5,1.75,-4.84,1.25,.7,.04,'#8faf84');
+cyl(-3.9,.16,-3.8,.28,.32,'#a1704e');for(let i=0;i<8;i++){const a=i*Math.PI/4;const l=entity('a-sphere',{position:[-3.9+Math.cos(a)*.25,.55+(i%3)*.14,-3.8+Math.sin(a)*.25].join(' '),radius:.22,scale:'1 1.8 .55',color:i%2?'#476b37':'#739452'});l.setAttribute('rotation','25 '+i*40+' 20')}block(-4.2,-3.6,-4.1,-3.5);
+cyl(-.35,.65,-3.9,.035,1.3,'#806a47');entity('a-cone',{position:'-.35 1.35 -3.9','radius-bottom':.32,'radius-top':.16,height:.42,material:'color:#ffe2a8;emissive:#ffcf7a;emissiveIntensity:.9'});
+box(2.8,.45,-4.4,2.1,.9,.65,'#79583d');for(let i=0;i<3;i++){box(2.1+i*.7,.47,-4.05,.65,.7,.05,'#98734e');box(2.1+i*.7,.65,-4.01,.13,.035,.04,'#c6ae7a')}block(1.7,3.9,-4.75,-4.05);
+
+// ---------- Flur ----------
+const shoes=entity('a-entity',{position:'0 0 5.7'});box(-.12,.06,0,.12,.12,.3,'#3b2a22',shoes);box(.14,.06,.08,.12,.12,.3,'#3b2a22',shoes).setAttribute('rotation','0 25 0');const shoeSpot=spot('shoes','Schuhe im Weg',0,.12,5.7,.6,.25,.5);
+box(4.8,.45,7.62,1.4,.9,.5,'#8a6a4c');block(4.05,5.55,7.35,8);box(4.4,.98,7.6,.34,.12,.22,'#e9ecea');sphere(4.4,1.06,7.6,.03,'#3fae5b');spot('base','Hausnotruf-Gerät',4.4,1.02,7.6,.45,.3,.35);
+const button=entity('a-entity',{position:'5.15 .93 7.55'});box(0,0,0,.1,.03,.1,'#d7dbdc',button);cyl(0,.025,0,.03,.02,'#c4372f',button);const buttonSpot=spot('button','Notrufknopf',5.15,.97,7.55,.35,.25,.35);
+box(3,1.55,5.1,1,.7,.04,'#b88a5a');box(2.75,1.55,5.13,.42,.55,.02,'#f6f3ea');box(3.25,1.6,5.13,.3,.35,.02,'#fff59a');spot('plan','Pinnwand mit Medikationsplan',3,1.55,5.25,1,.75,.25);
+box(8.4,.4,7.55,.5,.8,.45,'#6f5743');block(8.1,8.7,7.3,8);box(8.4,.84,7.55,.22,.07,.16,'#2b3238');spot('phone','Telefon',8.4,.9,7.55,.45,.25,.4);
+box(8.93,1.05,6.5,.06,2.1,1.1,'#6b4f37');sphere(8.88,1.05,6.1,.04,'#c6ae7a');spot('end','Wohnungstür: Besuch beenden',8.75,1.05,6.5,.25,2.1,1.1);
+for(let i=0;i<4;i++)sphere(-8.85,1.75,5.8+i*.35,.04,'#9a9a9a');box(-8.82,1.35,6.3,.12,.8,.5,'#4d5d6b');
+
+// ---------- Küche ----------
+box(8.6,.45,2.1,.8,.9,3,'#c6c0ae');box(8.6,.92,2.1,.84,.05,3.04,'#626f73');block(8.2,9,.6,3.6);
+box(8.6,.9,1.5,.5,.06,.4,'#9aa3a6');cyl(8.82,1.08,1.5,.02,.3,'#b9c0c3');spot('tap','Wasserhahn',8.6,1.05,1.5,.6,.45,.55);
+box(8.55,.9,4.3,.8,1.8,.8,'#e9e9e4');box(8.13,1.2,4.0,.03,.5,.04,'#888');block(8.15,8.95,3.9,4.7);spot('fridge','Kühlschrank',8.3,.9,4.3,.5,1.8,.9);
+box(6.3,.72,1.6,1,.06,.8,'#a7835c');for(const x of [5.88,6.72])for(const z of [1.28,1.92])box(x,.36,z,.05,.72,.05,'#a7835c');block(5.75,6.85,1.15,2.05);
+box(6.3,.79,1.6,.42,.06,.16,'#4b88c9');for(let i=0;i<4;i++)box(6.14+i*.105,.83,1.6,.09,.02,.13,'#cfe4f7');spot('dosette','Tablettendosette',6.3,.82,1.6,.55,.25,.35);
+box(6.3,.45,2.5,.45,.06,.45,'#8a6a4c');
+
+// ---------- Bad ----------
+const puddle=entity('a-cylinder',{position:'.1 .005 9.4',radius:.45,height:.01,material:'color:#9fd3ea;opacity:.6;transparent:true'});const towel=box(.35,.03,9.3,.5,.04,.35,'#e8e2cf');const puddleSpot=spot('puddle','Nasser Boden, Handtuch',.15,.1,9.4,1.1,.2,.9);
+box(1.45,.22,10.45,.45,.44,.6,'#f2f2ef');box(1.45,.62,10.78,.45,.4,.16,'#f2f2ef');block(1.15,1.8,10.1,10.9);spot('toilet','Toilette',1.45,.5,10.4,.7,.9,.8);
+box(-1.3,.85,10.72,.6,.12,.45,'#f2f2ef');cyl(-1.3,.45,10.8,.06,.8,'#f2f2ef');box(-1.3,1.55,10.94,.55,.7,.03,'#c9dde3');block(-1.65,-.95,10.45,10.95);
+box(-1.3,.05,8.85,.9,.08,.9,'#e8ecec');cyl(-1.65,2,8.5,.015,.3,'#b9c0c3');
+
+// ---------- Schlafzimmer ----------
+box(-7.6,.3,1.2,1.6,.5,2.1,'#7c6a8c');box(-7.6,.6,1.3,1.5,.12,1.9,'#e9e4f0');box(-7.6,.72,.4,.9,.14,.4,'#ffffff');box(-7.6,.6,2.25,1.6,.6,.08,'#6b5236');block(-8.45,-6.75,.1,2.3);
+box(-6.45,.3,-.3,.5,.6,.45,'#8a6a4c');block(-6.75,-6.15,-.6,0);box(-6.5,.61,-.3,.21,.01,.29,'#fbfbf6');cyl(-6.3,.72,-.25,.04,.22,'#cfe6ee');spot('log','Trinkprotokoll',-6.45,.68,-.3,.5,.25,.45);
+box(-8.7,1,4,.55,2,1.5,'#9b7b58');block(-9,-8.4,3.2,4.8);
+const rollator=entity('a-entity',{position:'-6.2 0 3.6'});rollatorModel(rollator);const rollSpot=spot('rollator','Rollator',-6.2,.6,3.6,.9,1.2,.9);
+
+// ---------- Zustand & Anzeige ----------
 function say(t){msg.textContent=t;vrtext.setAttribute('value',t)}
-// Videos liegen neben index.html (KI-generiert). 0 Begrüßung/Schwindel · 1 Trinkmenge · 2 Mobilisation (noch offen)
-const CLIPS=['begruessung.mp4','trinkmenge.mp4',null];
-let greeted=false,rude=false,bpBeforeMove=null;
-function play(i){if(!CLIPS[i])return;joy={x:0,y:0};move=null;if(inVR)showScreen();else film.hidden=false;video.src=CLIPS[i];video.play().catch(()=>{})}
-function showScreen(){const THREE=AFRAME.THREE,c=new THREE.Vector3(),d=new THREE.Vector3();const tc=cam.getObject3D('camera')||cam.object3D;tc.getWorldPosition(c);tc.getWorldDirection(d);d.y=0;d.normalize();vrscreen.object3D.position.set(c.x+d.x*1.6,c.y,c.z+d.z*1.6);vrscreen.object3D.lookAt(c.x,c.y,c.z);vrscreen.setAttribute('visible',true)}
-function stopFilm(){video.pause();film.hidden=true;vrscreen.setAttribute('visible',false)}
-document.querySelector('#skip').onclick=stopFilm;video.onended=stopFilm;document.querySelector('#menu').onclick=()=>{panel.hidden=!panel.hidden;move=null};document.querySelector('#close').onclick=()=>panel.hidden=true;
-const verbs={end:()=>'Besuch beenden',talk:()=>greeted?'Nach dem Trinken fragen':'Frau Weber begrüßen',sit:()=>'Sicherheit besprechen',water:()=>'Wasser anbieten',bp:()=>'Blutdruck messen',rug:()=>'Teppich ansprechen',move:()=>'Aufstehen üben',call:()=>'Pflegefachkraft anrufen'};
-const reactions={talk:['Nach Trinkmenge gefragt','Sie fragen, was Frau Weber heute getrunken hat. Sie hat noch kaum etwas getrunken.',1],sit:['Sicherheit besprochen','Sie bitten Frau Weber, vorerst sitzen zu bleiben und nicht allein aufzustehen. Sie ist einverstanden.'],water:['Trinken angeboten','Frau Weber ist wach und gibt an, sicher schlucken zu können. Sie nimmt einige Schlucke.'],bp:['Vitalzeichen erhoben','Simulierter Befund: RR 95/60 mmHg, Puls 102/min.'],rug:['Stolperstelle mit Frau Weber besprochen und beseitigt','Sie fragen, ob Sie den umgeschlagenen Teppich zur Seite legen dürfen. Frau Weber: „Na gut, der stört mich ja selbst.“ Der Laufweg ist frei.'],move:['Mobilisation versucht','Frau Weber richtet sich auf und berichtet über zunehmenden Schwindel. Die Mobilisation wird unterbrochen.',2],call:['Pflegefachkraft kontaktiert','Sie geben Ihre Beobachtungen weiter. Eine weitere Abklärung wird organisiert.']};
-function act(id){if(id==='end'){finish();return}if(finished||done.has(id))return;
-if(id==='talk'&&!greeted){greeted=true;history.push('Frau Weber begrüßt und vorgestellt');say('Sie stellen sich vor und begrüßen Frau Weber. Sie berichtet über Schwindel.');play(0);return}
-if(!greeted&&id!=='call'){if(!rude){rude=true;history.push('Ohne Begrüßung mit Maßnahme begonnen')}say('Frau Weber: „Moment mal – wer sind Sie denn? Sie haben sich ja gar nicht vorgestellt.“');return}
-const r=reactions[id];if(!r)return;done.add(id);history.push(r[0]);if(id==='move'&&bpBeforeMove===null)bpBeforeMove=done.has('bp');if(id==='move'){unsafe=true;attempted=true;person.setAttribute('animation__move','property:position;from:-1.7 0 -2.85;to:-1.7 .23 -2.65;dur:850;dir:alternate;loop:2');}if(id==='rug'){rug.setAttribute('visible',false);curled.setAttribute('visible',false);rugSpot.classList.remove('usable');rugSpot.setAttribute('visible',false);ray.components.raycaster.refreshObjects()}say(r[1]);if(r[2]!==undefined)play(r[2]);}
+function setCarry(c){carry=c;carryEl.hidden=!c;carryEl.textContent=c?'In der Hand: '+c:'';carryvis.innerHTML='';carryvis.setAttribute('visible',!!c);
+ if(c==='Glas Wasser'){cyl(0,0,0,.035,.1,'#9fd3ea',carryvis)}else if(c==='Notrufknopf'){box(0,0,0,.07,.02,.07,'#d7dbdc',carryvis);cyl(0,.02,0,.02,.015,'#c4372f',carryvis)}else if(c==='Rollator'){box(0,0,0,.12,.06,.06,'#737d83',carryvis)}}
+function hide(spotEl,...objs){spotEl.classList.remove('usable');spotEl.setAttribute('visible',false);if(spotEl.tag)spotEl.tag.setAttribute('visible',false);objs.forEach(o=>o.setAttribute('visible',false));refreshRays()}
+function log(t){history.push(t)}
+function play(i){if(!CLIPS[i])return;joy={x:0,y:0};move=null;video.src=CLIPS[i];if(inVR)showScreen();else film.hidden=false;video.play().catch(()=>{})}
+function placeInFront(el,dist){const tc=cam.getObject3D('camera')||cam.object3D,d=new THREE.Vector3();tc.getWorldPosition(tmpP);tc.getWorldDirection(d);d.y=0;d.normalize();el.object3D.position.set(tmpP.x+d.x*dist,tmpP.y-.1,tmpP.z+d.z*dist);el.object3D.lookAt(tmpP.x,tmpP.y-.1,tmpP.z)}
+function showScreen(){placeInFront(vrscreen,1.6);vrscreen.classList.add('vrbtn');vrscreen.setAttribute('visible',true);refreshRays()}
+function stopFilm(){video.pause();film.hidden=true;vrscreen.classList.remove('vrbtn');vrscreen.setAttribute('visible',false);refreshRays()}
+$('#skip').onclick=stopFilm;video.onended=stopFilm;
+$('#menu').onclick=()=>{panel.hidden=!panel.hidden;move=null};$('#close').onclick=()=>panel.hidden=true;
+
+// ---------- Dialoge (Handy/PC und Brille) ----------
+// d: {title, html (Handy), text (Brille), options:[{label, fn}], inputs:[{key,label,unit}], submit(values), vrOptions:[{label,fn}]}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function closeDialog(){dialogOpen=false;dlg.hidden=true;dlg.innerHTML='';vrdlg.innerHTML='';vrdlg.setAttribute('visible',false);refreshRays()}
+function dialog(d){dialogOpen=true;joy={x:0,y:0};move=null;
+ if(inVR){const opts=(d.inputs?d.vrOptions:d.options)||[];const all=opts.concat([{label:'Schließen',fn:()=>{}}]);vrdlg.innerHTML='';const h=.5+all.length*.14;
+  entity('a-plane',{width:1.3,height:h,position:'0 0 -0.01',material:'color:#172c40;opacity:.95;transparent:true;shader:flat'},vrdlg);
+  entity('a-text',{value:(d.title?d.title+'\n':'')+(d.text||''),width:1.22,'wrap-count':52,color:'#ffffff',anchor:'left',baseline:'top',position:(-0.61)+' '+(h/2-.05)+' 0'},vrdlg);
+  all.forEach((o,i)=>{const y=-h/2+.1+(all.length-1-i)*.14;const b=entity('a-plane',{width:1.2,height:.12,position:'0 '+y+' 0',material:'color:#183c57;shader:flat'},vrdlg);b.classList.add('vrbtn');b.dataset.opt=i;entity('a-text',{value:o.label,width:1.1,'wrap-count':58,color:'#ffffff',align:'center',position:'0 0 .01'},b);b.onPick=()=>{closeDialog();o.fn()}});
+  placeInFront(vrdlg,1.3);vrdlg.setAttribute('visible',true);refreshRays();return}
+ let html=(d.title?'<h3>'+esc(d.title)+'</h3>':'')+(d.html||'<p>'+esc(d.text||'')+'</p>');
+ if(d.inputs)html+=d.inputs.map(f=>'<label>'+esc(f.label)+'<span><input type="number" inputmode="numeric" id="in_'+f.key+'"> '+esc(f.unit||'')+'</span></label>').join('')+'<div class="opts"><button id="dlgok">Eintragen</button></div>';
+ const opts=(d.options||[]).concat([{label:'Schließen',fn:()=>{}}]);html+='<div class="opts">'+opts.map((o,i)=>'<button data-i="'+i+'">'+esc(o.label)+'</button>').join('')+'</div>';
+ dlg.innerHTML=html;dlg.hidden=false;dlg.querySelectorAll('.opts button[data-i]').forEach(b=>b.onclick=()=>{closeDialog();opts[+b.dataset.i].fn()});
+ if(d.inputs)$('#dlgok').onclick=()=>{const v={};d.inputs.forEach(f=>v[f.key]=parseFloat($('#in_'+f.key).value));closeDialog();d.submit(v)}}
+function shuffle(a){return a.map(x=>[Math.random(),x]).sort((p,q)=>p[0]-q[0]).map(x=>x[1])}
+
+// ---------- Fachinhalt (fiktiv, fachlich prüfen) ----------
+const PLAN=[['Ramipril 5 mg','1','0','0','Blutdruck'],['Torasemid 10 mg','1','0','0','Entwässerung'],['Metformin 500 mg','1','0','1','Diabetes']];
+const planHtml='<table><tr><th>Medikament</th><th>mo</th><th>mi</th><th>ab</th><th>Grund</th></tr>'+PLAN.map(r=>'<tr>'+r.map(c=>'<td>'+c+'</td>').join('')+'</tr>').join('')+'</table>';
+const planText=PLAN.map(r=>r[0]+': '+r[1]+'-'+r[2]+'-'+r[3]+' ('+r[4]+')').join('\n');
+
+// ---------- Handlungen ----------
+const verbs={weber:()=>greeted?'Mit Frau Weber …':'Frau Weber begrüßen',glass:()=>'Glas ansehen',bp:()=>'Blutdruck messen',rug:()=>'Teppich ansprechen',shoes:()=>'Schuhe wegräumen',base:()=>'Hausnotruf prüfen',button:()=>'Notrufknopf nehmen',plan:()=>'Medikationsplan lesen',phone:()=>'Pflegefachkraft anrufen',end:()=>'Besuch beenden',tap:()=>'Glas Wasser füllen',fridge:()=>'Kühlschrank öffnen',dosette:()=>'Dosette prüfen',puddle:()=>'Boden trocknen',toilet:()=>'Toilette ansehen',log:()=>'Trinkprotokoll',rollator:()=>'Rollator nehmen'};
+function noGreet(){if(!rude){rude=true;log('Ohne Begrüßung mit Maßnahmen begonnen')}say('Aus dem Wohnzimmer ruft Frau Weber: „Hallo? Wer ist denn da in meiner Wohnung?“ Begrüßen Sie zuerst Frau Weber.')}
+function act(id){
+ if(id==='end'){finish();return}
+ if(finished||dialogOpen)return;
+ if(id==='weber'){weberMenu();return}
+ if(!greeted&&id!=='plan'){noGreet();return}
+ switch(id){
+ case'glass':say(carry==='Glas Wasser'?'Geben Sie Frau Weber das Glas direkt – tippen Sie Frau Weber an.':'Das Glas auf dem Tisch ist leer. In der Küche gibt es Wasser.');break;
+ case'tap':if(carry){say('Sie haben schon etwas in der Hand: '+carry+'.');break}setCarry('Glas Wasser');log('Glas Wasser in der Küche gefüllt');say('Sie füllen ein Glas mit Wasser. Bringen Sie es zu Frau Weber.');break;
+ case'fridge':found.add('fridge');log('Kühlschrank angesehen');dialog({title:'Kühlschrank',text:'Im Kühlschrank: eine angebrochene Milch, ein Joghurt (abgelaufen), ein Stück Käse. Keine Getränke – nur eine leere Wasserflasche in der Tür.'});break;
+ case'plan':found.add('plan');if(!done.has('plan')){done.add('plan');log('Medikationsplan gelesen')}dialog({title:'Medikationsplan (Pinnwand)',html:'<p>Bundeseinheitlicher Medikationsplan, Frau Weber (fiktiv):</p>'+planHtml+'<p><small>Fiktives Übungsbeispiel.</small></p>',text:planText});break;
+ case'dosette':dosette();break;
+ case'bp':measure();break;
+ case'log':drinkLog();break;
+ case'rug':done.add('rug');hazards.add('Teppich');log('Teppich mit Frau Weber besprochen und zur Seite gelegt');hide(rugSpot,rug,curled);say('Sie fragen Frau Weber, ob Sie den umgeschlagenen Teppich zur Seite legen dürfen. Frau Weber: „Na gut, der stört mich ja selbst.“');break;
+ case'shoes':done.add('shoes');hazards.add('Schuhe');log('Schuhe aus dem Laufweg geräumt');hide(shoeSpot,shoes);say('Sie stellen die Schuhe ins Schuhregal. Der Weg vom Wohnzimmer in den Flur ist frei.');break;
+ case'puddle':done.add('puddle');hazards.add('Bad');log('Nassen Boden im Bad getrocknet');hide(puddleSpot,puddle,towel);say('Sie wischen die Pfütze auf und hängen das nasse Handtuch auf. Der Boden ist trocken.');break;
+ case'toilet':if(!found.has('griffe')){found.add('griffe');log('Fehlende Haltegriffe im Bad bemerkt')}say('An der Toilette und in der Dusche gibt es keine Haltegriffe. Merken Sie sich das für die Übergabe.');break;
+ case'base':found.add('base');log('Hausnotruf geprüft');say(done.has('alarm')?'Das Hausnotrufgerät ist eingesteckt, der Notrufknopf ist bei Frau Weber.':'Das Hausnotrufgerät ist eingesteckt und leuchtet grün. Der Notrufknopf liegt aber daneben auf der Kommode – Frau Weber trägt ihn nicht.');break;
+ case'button':if(carry){say('Sie haben schon etwas in der Hand: '+carry+'.');break}setCarry('Notrufknopf');hide(buttonSpot,button);log('Notrufknopf mitgenommen');say('Sie nehmen den Notrufknopf mit. Bringen Sie ihn zu Frau Weber.');break;
+ case'rollator':if(carry){say('Sie haben schon etwas in der Hand: '+carry+'.');break}setCarry('Rollator');hide(rollSpot,rollator);log('Rollator aus dem Schlafzimmer geholt');say('Sie nehmen den Rollator mit. Stellen Sie ihn Frau Weber in Reichweite.');break;
+ case'phone':sbar();break;
+ }}
+function weberMenu(){
+ if(!greeted){greeted=true;log('Frau Weber begrüßt und vorgestellt');say('Sie stellen sich vor und begrüßen Frau Weber. Sie berichtet über Schwindel.');play(0);return}
+ const o=[];
+ if(carry==='Glas Wasser')o.push({label:'Glas Wasser reichen',fn:()=>{setCarry(null);done.add('water');log('Glas Wasser gereicht');say('Frau Weber ist wach und gibt an, sicher schlucken zu können. Sie trinkt etwa die Hälfte – ungefähr 100 ml.')}});
+ if(carry==='Notrufknopf')o.push({label:'Notrufknopf anlegen',fn:()=>{setCarry(null);done.add('alarm');log('Notrufknopf angelegt');say('Sie legen Frau Weber den Notrufknopf ans Handgelenk und zeigen ihr noch einmal, wie er funktioniert.')}});
+ if(carry==='Rollator')o.push({label:'Rollator in Reichweite stellen',fn:()=>{setCarry(null);done.add('rollator');rollator.setAttribute('position','-.55 0 -3.15');rollator.setAttribute('visible',true);log('Rollator in Reichweite gestellt');say('Der Rollator steht jetzt neben dem Sessel. Die Bremsen sind festgestellt.')}});
+ if(!done.has('talk'))o.push({label:'Nach dem Trinken fragen',fn:()=>{done.add('talk');log('Nach Trinkmenge gefragt');say('Sie fragen, was Frau Weber heute getrunken hat. Sie hat noch kaum etwas getrunken.');play(1)}});
+ if(!done.has('sit'))o.push({label:'Sicherheit besprechen: sitzen bleiben',fn:()=>{done.add('sit');log('Sicherheit besprochen');say('Sie bitten Frau Weber, vorerst sitzen zu bleiben und nicht allein aufzustehen. Sie ist einverstanden.')}});
+ if(!done.has('move'))o.push({label:'Beim Aufstehen unterstützen',fn:mobilise});
+ dialog({title:'Frau Weber',text:'Was möchten Sie tun?',options:o})}
+function mobilise(){done.add('move');unsafe=true;attempted=true;log('Mobilisation versucht'+(done.has('rollator')?'':' (ohne Hilfsmittel in Reichweite)')+(bpOk?'':' (vor der Blutdruckmessung)'));
+ person.setAttribute('animation__move','property:position;from:-1.7 0 -2.85;to:-1.7 .23 -2.65;dur:850;dir:alternate;loop:2');
+ say('Frau Weber richtet sich auf und berichtet über zunehmenden Schwindel. Sie setzen sie sofort wieder hin. Die Mobilisation wird abgebrochen.');play(2)}
+function measure(){if(!done.has('bpm')){done.add('bpm');log('Blutdruck gemessen')}
+ const vr=[{label:'RR 95/60 mmHg, Puls 102/min',fn:()=>bpEntered(95,60,102)},{label:'RR 102/60 mmHg, Puls 95/min',fn:()=>bpEntered(102,60,95)},{label:'RR 95/102 mmHg, Puls 60/min',fn:()=>bpEntered(95,102,60)}];
+ dialog({title:'Blutdruckgerät',html:'<p>Das Gerät zeigt:</p><p style="font:600 26px monospace;background:#394c49;color:#c9f5c0;padding:10px;border-radius:8px;text-align:center">SYS 95 · DIA 60 · PUL 102</p><p>Tragen Sie die Werte in die Dokumentation ein.</p>',text:'Anzeige: SYS 95 · DIA 60 · PUL 102\nWelche Werte dokumentieren Sie?',inputs:[{key:'sys',label:'Systolisch',unit:'mmHg'},{key:'dia',label:'Diastolisch',unit:'mmHg'},{key:'pul',label:'Puls',unit:'/min'}],vrOptions:shuffle(vr),submit:v=>bpEntered(v.sys,v.dia,v.pul)})}
+function bpEntered(s,d,p){if(s===95&&d===60&&p===102){bpOk=true;done.add('bp');found.add('bp');log('Vitalwerte dokumentiert: RR 95/60 mmHg, Puls 102/min');say('Dokumentiert: RR 95/60 mmHg, Puls 102/min. Der Blutdruck ist niedrig, der Puls erhöht.')}else{log('Vitalwerte falsch dokumentiert ('+s+'/'+d+', Puls '+p+')');say('Die eingetragenen Werte stimmen nicht mit der Anzeige überein. Messen Sie noch einmal und tragen Sie genau ab.')}}
+function drinkLog(){found.add('log');if(!done.has('logread')){done.add('logread');log('Trinkprotokoll angesehen')}
+ const tbl='<table><tr><th>Zeit</th><th>Getränk</th><th>ml</th></tr><tr><td colspan=3><b>Gestern</b></td></tr><tr><td>07:30</td><td>Kaffee</td><td>150</td></tr><tr><td>12:00</td><td>Wasser</td><td>200</td></tr><tr><td>18:00</td><td>Tee</td><td>200</td></tr><tr><td colspan=2>Summe gestern</td><td>550</td></tr><tr><td colspan=3><b>Heute</b></td></tr><tr><td colspan=3>noch keine Einträge</td></tr></table>';
+ const txt='Gestern: 07:30 Kaffee 150 ml, 12:00 Wasser 200 ml, 18:00 Tee 200 ml = 550 ml. Heute: noch keine Einträge.';
+ if(!done.has('water')||drinkOk){dialog({title:'Trinkprotokoll',html:tbl+(drinkOk?'<p>Ihr Eintrag: heute 100 ml Wasser.</p>':'<p>Bringen Sie Frau Weber etwas zu trinken und tragen Sie die Menge danach hier ein.</p>'),text:txt+(drinkOk?'\nIhr Eintrag: heute 100 ml Wasser.':'')});return}
+ dialog({title:'Trinkprotokoll',html:tbl+'<p>Wie viel hat Frau Weber bei Ihrem Besuch getrunken?</p>',text:txt+'\nWie viel hat Frau Weber bei Ihrem Besuch getrunken?',inputs:[{key:'ml',label:'Wasser',unit:'ml'}],vrOptions:shuffle([{label:'100 ml',fn:()=>drinkEntered(100)},{label:'200 ml',fn:()=>drinkEntered(200)},{label:'550 ml',fn:()=>drinkEntered(550)}]),submit:v=>drinkEntered(v.ml)})}
+function drinkEntered(ml){if(ml>=80&&ml<=120){drinkOk=true;done.add('drinklog');log('Trinkmenge dokumentiert: '+ml+' ml');say('Eingetragen: '+ml+' ml Wasser. Gestern hat Frau Weber nur etwa 550 ml getrunken.')}else{log('Trinkmenge falsch dokumentiert ('+ml+' ml)');say('Das passt nicht: Frau Weber hat etwa die Hälfte des Glases getrunken.')}}
+function dosette(){found.add('dosette');if(!done.has('dosread')){done.add('dosread');log('Dosette angesehen')}
+ const html='<p>Wochendosette, Fächer für heute (Mittwoch) und morgen (Donnerstag):</p><table><tr><th></th><th>morgens</th><th>mittags</th><th>abends</th></tr><tr><td>Mi</td><td>leer</td><td>leer</td><td>Metformin</td></tr><tr><td>Do</td><td>Ramipril, Torasemid, Metformin</td><td>Torasemid</td><td>Metformin</td></tr></table>'+(found.has('plan')?'<p>Zum Vergleich der Medikationsplan:</p>'+planHtml:'<p><small>Der Medikationsplan hängt an der Pinnwand im Flur.</small></p>')+'<p><b>Was fällt Ihnen auf?</b></p>';
+ const txt='Dosette Mi: morgens leer, mittags leer, abends Metformin. Do: morgens Ramipril, Torasemid, Metformin · mittags Torasemid · abends Metformin.'+(found.has('plan')?'\nPlan: '+planText.replace(/\n/g,' · '):'\n(Plan hängt im Flur.)')+'\nWas fällt Ihnen auf?';
+ const o=shuffle([{label:'Torasemid liegt auch mittags drin – laut Plan nur morgens',fn:()=>{medOk=true;found.add('med');log('Dosette geprüft: Torasemid zusätzlich mittags gestellt');say('Richtig: Torasemid ist zusätzlich im Mittagsfach. Frau Weber hat es heute vermutlich zweimal genommen. Sie ändern nichts selbst – das gehört in die Übergabe.')}},
+  {label:'Metformin fehlt morgens',fn:()=>{medOk=false;log('Dosette geprüft: Auffälligkeit nicht erkannt');say('Prüfen Sie noch einmal: Metformin liegt morgens und abends drin, wie im Plan.')}},
+  {label:'Alles stimmt mit dem Plan überein',fn:()=>{medOk=false;log('Dosette geprüft: Auffälligkeit nicht erkannt');say('Vergleichen Sie Fach für Fach mit dem Medikationsplan im Flur.')}}]);
+ dialog({title:'Tablettendosette',html,text:txt,options:o})}
+const SBAR=[
+ ['S – Situation',[['Ich bin bei Frau Weber. Sie ist schwindelig und hat heute kaum getrunken.',1],['Ich bin bei Frau Weber. Es geht ihr gut, sie ist nur etwas müde.',0],['Ich bin bei Frau Weber. Der Teppich lag schief.',0]]],
+ ['B – Hintergrund',[['Sie nimmt laut Plan morgens Torasemid. Gestern hat sie nur etwa 550 ml getrunken.',1],['Sie wohnt allein und hat einen Rollator.',0],['Ihre Tochter war letzte Woche zu Besuch.',0]]],
+ ['A – Einschätzung',[['RR 95/60 mmHg, Puls 102/min. Torasemid war zusätzlich mittags gestellt.',1],['Blutdruck und Puls sind normal.',0],['Ich glaube, sie ist erkältet.',0]]],
+ ['R – Empfehlung',[['Bitte um Rückruf und Abklärung. Bis dahin bleibt sie sitzen, trinkt in kleinen Schlucken, der Notrufknopf ist am Handgelenk.',1],['Ich gebe ihr noch eine Tablette gegen den Blutdruck.',0],['Ich gehe jetzt, sie soll sich ausruhen.',0]]]];
+function sbar(){if(done.has('call')){say('Sie haben die Pflegefachkraft schon informiert. Sie ruft zurück.');return}let score=0,step=0;
+ const next=()=>{if(step>=SBAR.length){done.add('call');sbarScore=score;log('Übergabe nach SBAR: '+score+' von 4 passend');
+   const miss=[];if(!found.has('bp'))miss.push('Blutdruck und Puls');if(!found.has('log'))miss.push('Trinkprotokoll');if(!found.has('med'))miss.push('Auffälligkeit in der Dosette');
+   say('Pflegefachkraft: „Danke. Ich informiere die Hausärztin und rufe Sie gleich zurück. Bitte bleiben Sie so lange bei Frau Weber.“ ('+score+' von 4 Teilen passend'+(miss.length?'; noch nicht selbst erhoben: '+miss.join(', '):'')+')');return}
+  const[t,opts]=SBAR[step];dialog({title:'Übergabe am Telefon · '+t,text:'Was sagen Sie?',options:shuffle(opts.map(([l,ok])=>({label:l,fn:()=>{score+=ok;step++;next()}})))})};
+ log('Pflegefachkraft angerufen');next()}
+
+// ---------- Auswertung ----------
+function finish(){if(finished){panel.hidden=false;return}finished=true;closeDialog();move=null;joy={x:0,y:0};
+ const items=[[greeted&&!rude,'Begrüßt und vorgestellt, bevor Sie gehandelt haben'],[done.has('sit'),'Sicherheit besprochen: Frau Weber bleibt sitzen'],[bpOk,'Blutdruck und Puls gemessen und richtig dokumentiert'],[found.has('log'),'Trinkprotokoll angesehen'],[done.has('water'),'Glas Wasser aus der Küche gebracht'],[drinkOk,'Trinkmenge dokumentiert'],[medOk===true,'Dosette mit dem Plan verglichen, Torasemid mittags erkannt'],[hazards.size===3,'Stolperfallen beseitigt ('+hazards.size+' von 3: Teppich, Schuhe, Bad)'],[found.has('griffe'),'Fehlende Haltegriffe im Bad bemerkt'],[done.has('alarm'),'Notrufknopf angelegt'],[done.has('rollator'),'Rollator in Reichweite gestellt'],[sbarScore===4,'Übergabe nach SBAR'+(sbarScore===null?' (nicht erfolgt)':' ('+sbarScore+' von 4 passend)')],[!unsafe,'Keine Mobilisation trotz Schwindel']];
+ const notes=[];if(done.has('move')&&!bpOk)notes.push('Sie haben das Aufstehen geübt, bevor Blutdruck und Puls bekannt waren.');if(attempted&&!done.has('move'))notes.push('Frau Weber ist allein aufgestanden. Was hätte das verhindert?');
+ const n=items.filter(i=>i[0]).length;
+ $('#report').innerHTML='<b>Ihr Besuch: '+n+' von '+items.length+'</b><ul>'+items.map(i=>'<li>'+(i[0]?'✓ ':'✗ ')+esc(i[1])+'</li>').join('')+'</ul>'+(notes.length?'<p>'+esc(notes.join(' '))+'</p>':'')+'<p><b>Für die Nachbesprechung:</b> Wie hängen Schwindel, Trinkmenge und Medikamente bei Frau Weber zusammen? Was hätten Sie in welcher Reihenfolge getan?</p><small>Ihr Ablauf: '+esc(history.join(' → ')||'keine Maßnahmen')+'</small>';
+ panel.hidden=false;$('#finish').hidden=true;
+ vrbg.setAttribute('height',1.05);vrtext.setAttribute('wrap-count',56);vrtext.setAttribute('value','Ihr Besuch: '+n+' von '+items.length+'\n'+items.map(i=>(i[0]?'[x] ':'[ ] ')+i[1]).join('\n')+(notes.length?'\n'+notes.join(' '):'')+'\nNehmen Sie die Brille ab: Das Protokoll steht auch im Menü.')}
+$('#finish').onclick=finish;$('#end').onclick=finish;
+
+// ---------- Ablauf, Bewegung, Eingabe ----------
 use.onclick=()=>{if(target)act(target.dataset.id)};
-function tick(now=performance.now()){requestAnimationFrame(tick);let dt=Math.min(.05,Math.max(0,(now-last)/1000));last=now;if(!rig.object3D||!cam.object3D)return;const rc=ray.components.raycaster;let old=target;target=rc&&rc.intersectedEls.find(e=>!done.has(e.dataset.id));if(old&&old.tag&&old!==target)old.tag.setAttribute('visible',false);if(target&&target.tag&&old!==target)target.tag.setAttribute('visible',true);use.disabled=!target||finished;use.textContent=target?(verbs[target.dataset.id]?verbs[target.dataset.id]():target.dataset.title):'Gegenstand ansehen';if(!finished&&film.hidden&&panel.hidden&&!vrscreen.getAttribute('visible')){elapsed+=dt;if(elapsed>45&&!done.has('sit')&&!attempted&&!warned){warned=true;say('Frau Weber: Ich muss jetzt aufstehen. Mir ist immer noch schwindelig.');history.push('Patientin äußert erneut Mobilisationswunsch')}if(elapsed>85&&!done.has('sit')&&!attempted&&!done.has('call')){attempted=true;unsafe=true;history.push('Patientin beginnt selbstständig aufzustehen');say('Frau Weber versucht ohne Unterstützung aufzustehen und setzt sich wegen Schwindel wieder hin.');play(2)}let dx=joy.x,dz=joy.y;if(move==='f')dz=-1;if(move==='b')dz=1;if(move==='l')dx=-1;if(move==='r')dx=1;(cam.getObject3D('camera')||cam.object3D).getWorldDirection(fw);fw.y=0;if(fw.lengthSq()<1e-6)fw.set(0,0,-1);fw.normalize();let p=rig.object3D.position,vx=fw.x*-dz+(-fw.z)*dx,vz=fw.z*-dz+fw.x*dx,nx=Math.max(-4.55,Math.min(4.55,p.x+vx*dt*1.65)),nz=Math.max(-4.55,Math.min(4.55,p.z+vz*dt*1.65));const free=(x,z)=>!obstacles.some(o=>x>o[0]-.16&&x<o[1]+.16&&z>o[2]-.16&&z<o[3]+.16);if(free(nx,p.z))p.x=nx;if(free(p.x,nz))p.z=nz}}
-const pad=document.querySelector('#controls'),knob=document.querySelector('#knob');function joystick(e){let r=pad.getBoundingClientRect(),x=e.clientX-r.left-r.width/2,y=e.clientY-r.top-r.height/2,len=Math.hypot(x,y),scale=Math.max(1,len/35);joy.x=x/scale/35;joy.y=y/scale/35;knob.style.transform='translate('+x/scale+'px,'+y/scale+'px)'}pad.onpointerdown=e=>{e.preventDefault();pad.setPointerCapture(e.pointerId);joystick(e)};pad.onpointermove=e=>{if(pad.hasPointerCapture(e.pointerId))joystick(e)};pad.onpointerup=pad.onpointercancel=pad.onlostpointercapture=()=>{joy={x:0,y:0};knob.style.transform='none'};
-let down=null;const scene=document.querySelector('a-scene');scene.addEventListener('loaded',()=>{let canvas=scene.canvas;canvas.addEventListener('pointerdown',e=>{down=[e.clientX,e.clientY,performance.now()]});canvas.addEventListener('pointerup',e=>{if(!down||Math.hypot(e.clientX-down[0],e.clientY-down[1])>12||performance.now()-down[2]>500)return;let rect=canvas.getBoundingClientRect(),mouse=new THREE.Vector2((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1),cast=new THREE.Raycaster();cast.setFromCamera(mouse,scene.camera);cast.far=3;let usable=[...room.querySelectorAll('.usable')].filter(x=>!done.has(x.dataset.id));let hits=cast.intersectObjects(usable.map(x=>x.object3D),true);if(hits.length){let obj=hits[0].object;while(obj&&!obj.el?.dataset?.id)obj=obj.parent;if(obj?.el)act(obj.el.dataset.id)}})});
-window.addEventListener('keydown',e=>{const m={w:'f',a:'l',s:'b',d:'r',ArrowUp:'f',ArrowDown:'b',ArrowLeft:'l',ArrowRight:'r'}[e.key];if(m)move=m;if(e.key==='e'&&target)act(target.dataset.id)});window.addEventListener('keyup',()=>move=null);
-function finish(){if(finished){panel.hidden=false;return}finished=true;move=null;joy={x:0,y:0};
-const items=[[greeted&&!rude,'Begrüßt und vorgestellt, bevor Sie gehandelt haben'],[done.has('sit'),'Sicherheit besprochen: Frau Weber bleibt vorerst sitzen'],[done.has('bp'),'Vitalzeichen erhoben'],[done.has('talk'),'Nach der Trinkmenge gefragt'],[done.has('water'),'Trinken angeboten'],[done.has('rug'),'Stolperstelle angesprochen und beseitigt'],[done.has('call'),'Beobachtungen an die Pflegefachkraft weitergegeben'],[!unsafe,'Keine Mobilisation trotz Schwindel']];
-let notes=[];if(attempted&&done.has('move')&&bpBeforeMove===false)notes.push('Sie haben das Aufstehen geübt, bevor Sie den Blutdruck gemessen hatten.');if(attempted&&!done.has('move'))notes.push('Frau Weber ist allein aufgestanden. Was hätte das verhindert?');
-document.querySelector('#report').innerHTML='<b>Ihr Besuch</b><ul>'+items.map(i=>'<li>'+(i[0]?'✓ ':'✗ ')+i[1]+'</li>').join('')+'</ul>'+(notes.length?'<p>'+notes.join(' ')+'</p>':'')+'<p><b>Für die Nachbesprechung:</b> Was war Ihr erster Eindruck von Frau Weber? Welche Werte und Beobachtungen haben Sie weitergegeben?</p><small>Ihr Ablauf: '+(history.join(' → ')||'keine Maßnahmen')+'</small>';
-panel.hidden=false;document.querySelector('#finish').hidden=true;
-vrbg.setAttribute('height',0.72);vrtext.setAttribute('value','Ihr Besuch\n'+items.map(i=>(i[0]?'[x] ':'[ ] ')+i[1]).join('\n')+(notes.length?'\n\n'+notes.join(' '):'')+'\n\nNehmen Sie die Brille ab. Ihr Protokoll steht auch im Menü.')}
-const sc=document.querySelector('a-scene');
-sc.addEventListener('enter-vr',()=>{inVR=true;joy={x:0,y:0};panel.hidden=true;film.hidden=true;vrpanel.setAttribute('visible',true);vrtext.setAttribute('value',msg.textContent)});
-sc.addEventListener('exit-vr',()=>{inVR=false;vrpanel.setAttribute('visible',false);vrscreen.setAttribute('visible',false)});
-sc.addEventListener('click',e=>{if(!inVR)return;const el=e.target;if(el===vrscreen){stopFilm();return}if(el.dataset&&el.dataset.id)act(el.dataset.id)});
+let lastRoom='';
+function tick(now=performance.now()){requestAnimationFrame(tick);const dt=Math.min(.05,Math.max(0,(now-last)/1000));last=now;if(!rig.object3D||!cam.object3D)return;
+ const rc=ray.components.raycaster,old=target;target=rc&&rc.intersectedEls.find(e=>!done.has(e.dataset.id)&&e.classList.contains('usable'));
+ if(old&&old.tag&&old!==target)old.tag.setAttribute('visible',false);if(target&&target.tag&&old!==target)target.tag.setAttribute('visible',true);
+ use.disabled=!target||finished;use.textContent=target?(verbs[target.dataset.id]?verbs[target.dataset.id]():target.dataset.title):'Gegenstand ansehen';
+ const p=rig.object3D.position,r=roomAt(p.x,p.z);if(r!==lastRoom){lastRoom=r;$('#room-name').textContent=r}
+ if(finished||!film.hidden||!panel.hidden||dialogOpen||vrscreen.getAttribute('visible'))return;
+ if(greeted){elapsed+=dt;
+  if(elapsed>100&&!done.has('sit')&&!attempted&&!warned&&!done.has('call')){warned=true;log('Frau Weber äußert den Wunsch aufzustehen');say('Aus dem Wohnzimmer: „Ich muss jetzt mal aufstehen. Mir ist immer noch so schwindelig …“')}
+  if(elapsed>170&&!done.has('sit')&&!attempted&&!done.has('call')){attempted=true;unsafe=true;log('Frau Weber beginnt allein aufzustehen');say('Frau Weber versucht ohne Unterstützung aufzustehen und setzt sich wegen Schwindel wieder hin.');person.setAttribute('animation__move','property:position;from:-1.7 0 -2.85;to:-1.7 .2 -2.7;dur:800;dir:alternate;loop:2');play(2)}}
+ let dx=joy.x,dz=joy.y;if(move==='f')dz=-1;if(move==='b')dz=1;if(move==='l')dx=-1;if(move==='r')dx=1;if(!dx&&!dz)return;
+ (cam.getObject3D('camera')||cam.object3D).getWorldDirection(fw);fw.y=0;if(fw.lengthSq()<1e-6)fw.set(0,0,-1);fw.normalize();
+ const vx=fw.x*-dz+(-fw.z)*dx,vz=fw.z*-dz+fw.x*dx,nx=p.x+vx*dt*1.65,nz=p.z+vz*dt*1.65;
+ const free=(x,z)=>x>-8.8&&x<8.8&&z>-4.8&&z<10.8&&!obstacles.some(o=>x>o[0]-.18&&x<o[1]+.18&&z>o[2]-.18&&z<o[3]+.18);if(free(nx,p.z))p.x=nx;if(free(p.x,nz))p.z=nz}
+const pad=$('#controls'),knob=$('#knob');
+function joystick(e){const r=pad.getBoundingClientRect(),x=e.clientX-r.left-r.width/2,y=e.clientY-r.top-r.height/2,s=Math.max(1,Math.hypot(x,y)/35);joy.x=x/s/35;joy.y=y/s/35;knob.style.transform='translate('+x/s+'px,'+y/s+'px)'}
+pad.onpointerdown=e=>{e.preventDefault();pad.setPointerCapture(e.pointerId);joystick(e)};pad.onpointermove=e=>{if(pad.hasPointerCapture(e.pointerId))joystick(e)};pad.onpointerup=pad.onpointercancel=pad.onlostpointercapture=()=>{joy={x:0,y:0};knob.style.transform='none'};
+let down=null;sc.addEventListener('loaded',()=>{const cv=sc.canvas;cv.addEventListener('pointerdown',e=>{down=[e.clientX,e.clientY,performance.now()]});cv.addEventListener('pointerup',e=>{if(!down||Math.hypot(e.clientX-down[0],e.clientY-down[1])>12||performance.now()-down[2]>500)return;
+ const rect=cv.getBoundingClientRect(),m=new THREE.Vector2((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1),c=new THREE.Raycaster();c.setFromCamera(m,sc.camera);c.far=3;
+ const us=[...room.querySelectorAll('.usable')].filter(x=>!done.has(x.dataset.id));const hits=c.intersectObjects(us.map(x=>x.object3D),true);if(hits.length){let o=hits[0].object;while(o&&!o.el?.dataset?.id)o=o.parent;if(o?.el)act(o.el.dataset.id)}})});
+addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;const m={w:'f',a:'l',s:'b',d:'r',ArrowUp:'f',ArrowDown:'b',ArrowLeft:'l',ArrowRight:'r'}[e.key];if(m)move=m;if(e.key==='e'&&target)act(target.dataset.id)});addEventListener('keyup',()=>move=null);
+// Brille
+sc.addEventListener('enter-vr',()=>{inVR=true;joy={x:0,y:0};panel.hidden=true;film.hidden=true;closeDialog();vrpanel.setAttribute('visible',true);vrtext.setAttribute('value',msg.textContent)});
+sc.addEventListener('exit-vr',()=>{inVR=false;vrpanel.setAttribute('visible',false);vrscreen.setAttribute('visible',false);closeDialog()});
+sc.addEventListener('click',e=>{if(!inVR)return;const el=e.target;if(el===vrscreen){stopFilm();return}if(el.onPick){el.onPick();return}if(dialogOpen)return;if(el.dataset&&el.dataset.id&&el.classList.contains('usable'))act(el.dataset.id)});
 room.addEventListener('raycaster-intersected',e=>{const t=e.target.tag;if(t&&inVR)t.setAttribute('visible',true)});
 room.addEventListener('raycaster-intersected-cleared',e=>{const t=e.target.tag;if(t&&inVR)t.setAttribute('visible',false)});
-document.querySelector('#lhand').addEventListener('thumbstickmoved',e=>{const x=e.detail.x,y=e.detail.y;joy.x=Math.abs(x)>.15?x:0;joy.y=Math.abs(y)>.15?y:0});
-let turned=false;document.querySelector('#rhand').addEventListener('thumbstickmoved',e=>{const x=e.detail.x;if(Math.abs(x)>.7&&!turned){turned=true;rig.object3D.rotation.y-=Math.sign(x)*Math.PI/6}else if(Math.abs(x)<.3)turned=false});
-document.querySelector('#finish').onclick=finish;document.querySelector('#end').onclick=finish;tick();
-</script></body></html>
+$('#lhand').addEventListener('thumbstickmoved',e=>{const x=e.detail.x,y=e.detail.y;joy.x=Math.abs(x)>.15?x:0;joy.y=Math.abs(y)>.15?y:0});
+let turned=false;$('#rhand').addEventListener('thumbstickmoved',e=>{const x=e.detail.x;if(Math.abs(x)>.7&&!turned){turned=true;rig.object3D.rotation.y-=Math.sign(x)*Math.PI/6}else if(Math.abs(x)<.3)turned=false});
+// zum Testen
+window.__sim={act,weberMenu,finish,state:()=>({greeted,carry,done:[...done],found:[...found],bpOk,drinkOk,medOk,sbarScore,hazards:[...hazards],history})};
+tick();
+}
+</script>
+</body>
+</html>
