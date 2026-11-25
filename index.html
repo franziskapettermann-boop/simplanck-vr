@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>SIMPlanck Game Lab 0.11</title>
+<title>SIMPlanck Game Lab 0.12</title>
 <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
 <style>
 *{box-sizing:border-box}
@@ -61,7 +61,7 @@ video{width:min(94vw,850px);max-height:72vh}
 </a-scene></div>
 
 <div id="hud">
- <header><b>SIMPlanck</b> · GAME LAB 0.11<br><small>Mission 01 · Hausbesuch am Abend · <span id="room-name">Flur</span></small></header>
+ <header><b>SIMPlanck</b> · GAME LAB 0.12<br><small>Mission 01 · Hausbesuch am Abend · <span id="room-name">Flur</span></small></header>
  <div id="message">Sie arbeiten im ambulanten Pflegedienst und kommen zum Abendbesuch zu Frau Weber. Sie sitzt im Wohnzimmer. Begrüßen Sie sie zuerst. Danach handeln Sie selbstständig – die ganze Wohnung gehört dazu.</div>
  <div id="carry" hidden></div>
  <button id="end">Beenden</button><button id="menu">☰</button>
@@ -138,7 +138,29 @@ for(const[x,z,i]of[[-.35,-3.6,1.2],[2,1,.5],[-7,2,.7],[7,2.5,.8],[3,6.5,.6],[-6,
 box(-2.7,1.6,-4.9,2.6,1.3,.06,'#243650');box(-2.7,1.6,-4.85,.07,1.3,.06,'#fff');box(-2.7,1.6,-4.85,2.6,.07,.06,'#fff');
 for(let i=0;i<9;i++)box(-3.95+i*.03,1.35,-4.75,.045,2.2,.12,i%2?'#b8ad97':'#c8bea8');box(-1.4,1.35,-4.75,.35,2.2,.12,'#b0a78f');
 model('ph_ArmChair_01',-1.7,0,-3.1,0,1.35);block(-2.5,-.9,-3.6,-2.3);
-const person=entity('a-entity',{position:'-1.7 0 -2.85'});box(0,1.04,0,.52,.65,.34,'#c9b9a0',person);sphere(0,1.53,0,.22,'#d6aa8c',person);sphere(0,1.63,-.05,.23,'#b2b2ad',person);box(-.16,.62,.3,.23,.28,.65,'#716f63',person);box(.16,.62,.3,.23,.28,.65,'#716f63',person);box(-.16,.33,.58,.22,.62,.22,'#716f63',person);box(.16,.33,.58,.22,.62,.22,'#716f63',person);box(-.35,1,.1,.15,.5,.18,'#c9b9a0',person);box(.35,1,.1,.15,.5,.18,'#c9b9a0',person);
+const person=entity('a-entity',{position:'-1.7 0 -2.85'});
+const W=(()=>{const P=person,skin='#e6bea2',cardi='#7f8ea3',blouse='#f1ece0',skirt='#4f4d4a',hair='#e4e4df',shoe='#7a3b3b',E=(t,a,par)=>entity(t,a,par);
+ E('a-sphere',{radius:.2,scale:'1.15 .6 1.05',position:'0 .64 0',color:skirt},P);
+ for(const x of [-.1,.1]){E('a-cylinder',{radius:.085,height:.42,rotation:'90 0 0',position:x+' .63 .2',color:skirt},P);E('a-cylinder',{radius:.05,height:.46,position:x+' .38 .41',color:'#cdb6a4'},P);E('a-box',{width:.1,height:.08,depth:.22,position:x+' .05 .47',color:shoe},P)}
+ const torso=E('a-entity',{position:'0 .7 0'},P);
+ E('a-cylinder',{radius:.19,height:.48,position:'0 .25 -.03',rotation:'-8 0 0','radius-top':.17,color:cardi},torso);
+ E('a-box',{width:.11,height:.34,depth:.02,position:'0 .3 .155',rotation:'-8 0 0',color:blouse},torso);
+ E('a-sphere',{radius:.2,scale:'1.05 .5 .8',position:'0 .47 -.04',color:cardi},torso);
+ E('a-cylinder',{radius:.048,height:.1,position:'0 .56 -.03',color:skin},torso);
+ const head=E('a-entity',{position:'0 .7 -.03'},torso);
+ E('a-sphere',{radius:.115,scale:'1 1.12 1',color:skin},head);
+ E('a-sphere',{radius:.13,'theta-length':118,rotation:'-58 0 0',position:'0 .02 -.014',color:hair},head);for(const x of [-.1,.1])E('a-sphere',{radius:.05,position:x+' .0 -.03',color:hair},head);for(const x of [-.06,.06])E('a-sphere',{radius:.02,position:x+' -.025 .095',color:'#eaa994',opacity:.6},head);
+ E('a-sphere',{radius:.055,position:'0 .07 -.12',color:hair},head);
+ for(const x of [-.042,.042]){E('a-sphere',{radius:.011,position:x+' .018 .104',color:'#3b3b3b'},head);E('a-torus',{radius:.028,'radius-tubular':.004,position:x+' .018 .113',color:'#6a5646'},head)}
+ E('a-box',{width:.03,height:.005,depth:.005,position:'0 .02 .115',color:'#6a5646'},head);
+ E('a-sphere',{radius:.016,position:'0 -.01 .118',color:'#d9a98d'},head);
+ E('a-box',{width:.045,height:.007,depth:.01,position:'0 -.055 .106',color:'#a5655a'},head);
+ const arm=(side)=>{const g=E('a-entity',{position:(side*.22)+' .46 -.03'},torso);
+  E('a-cylinder',{radius:.055,height:.3,position:'0 -.14 .02',rotation:'15 0 0',color:cardi},g);
+  E('a-cylinder',{radius:.048,height:.28,position:(side*.03)+' -.27 .16',rotation:'90 0 0',color:cardi},g);
+  E('a-sphere',{radius:.048,scale:'1 .6 1.35',position:(side*.03)+' -.27 .32',color:skin},g);return g};
+ const armR=arm(-1),armL=arm(1);
+ return{torso,head,armR,armL}})();
 spot('weber','Frau Weber',-1.7,1.2,-2.5,1.1,1.3,.7);
 model('ph_CoffeeTable_01',.3,0,-1.8,0,[1,1.39,1.1]);block(-.5,1.05,-2.4,-1.2);
 const glassEl=cyl(0,.84,-1.8,.07,.2,'#cfe6ee');glassEl.setAttribute('material','color:#d9eef5;opacity:.55;transparent:true');model('DiffuseTransmissionTeacup',.35,.735,-2.05,20,1);const glassSpot=spot('glass','Leeres Glas',0,.85,-1.8,.3,.3,.3);
@@ -323,7 +345,11 @@ $('#start').onclick=begin;
 // ---------- Ablauf, Bewegung, Eingabe ----------
 use.onclick=()=>{if(target)act(target.dataset.id)};
 let lastRoom='';
-function tick(now=performance.now()){const dt=Math.min(.05,Math.max(0,(now-last)/1000));last=now;if(!rig.object3D||!cam.object3D)return;if(inVR)vrUpdate(dt);
+let dizzyT=6;const hw=new THREE.Vector3(),cw=new THREE.Vector3();
+function animWeber(dt,now){W.torso.object3D.scale.y=1+.015*Math.sin(now/650);
+ W.head.object3D.getWorldPosition(hw);(cam.getObject3D('camera')||cam.object3D).getWorldPosition(cw);const dx=cw.x-hw.x,dz=cw.z-hw.z,dist=Math.hypot(dx,dz);let yaw=0,pit=0;if(dist<4.5&&greeted){yaw=Math.max(-.75,Math.min(.75,Math.atan2(dx,dz)));pit=Math.max(-.35,Math.min(.3,-Math.atan2(cw.y-hw.y,dist)))}const r=W.head.object3D.rotation;r.y+=(yaw-r.y)*Math.min(1,dt*3);r.x+=(pit-r.x)*Math.min(1,dt*3);
+ dizzyT-=dt;if(dizzyT<0&&!done.has('water')){dizzyT=11+Math.random()*6;W.armR.removeAttribute('animation__dz');W.armR.setAttribute('animation__dz','property:rotation;from:0 0 0;to:-100 0 42;dur:1100;dir:alternate;loop:2;easing:easeInOutSine')}}
+function tick(now=performance.now()){const dt=Math.min(.05,Math.max(0,(now-last)/1000));last=now;if(!rig.object3D||!cam.object3D)return;animWeber(dt,now);if(inVR)vrUpdate(dt);
  const rc=ray.components.raycaster,old=target;target=rc&&rc.intersectedEls.find(e=>!done.has(e.dataset.id)&&e.classList.contains('usable'));
  if(old&&old.tag&&old!==target)old.tag.setAttribute('visible',false);if(target&&target.tag&&old!==target)target.tag.setAttribute('visible',true);
  use.disabled=!target||finished;use.textContent=target?(verbs[target.dataset.id]?verbs[target.dataset.id]():target.dataset.title):'Gegenstand ansehen';
