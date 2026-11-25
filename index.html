@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>SIMPlanck Game Lab 0.8</title>
+<title>SIMPlanck Game Lab 0.9</title>
 <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
 <style>
 *{box-sizing:border-box}
@@ -50,6 +50,7 @@ video{width:min(94vw,850px);max-height:72vh}
   <a-entity id="carryvis" position="0.24 -0.3 -0.55" visible="false"></a-entity>
  </a-entity>
  <a-entity id="lhand" laser-controls="hand:left" raycaster="objects:.usable,.vrbtn;far:6;lineColor:#f4b36b;lineOpacity:0.7"></a-entity>
+ <a-entity id="lhandT" hand-tracking-controls="hand:left;modelColor:#e2b79c"></a-entity><a-entity id="rhandT" hand-tracking-controls="hand:right;modelColor:#e2b79c"></a-entity>
  <a-entity id="rhand" laser-controls="hand:right" raycaster="objects:.usable,.vrbtn;far:6;lineColor:#f4b36b;lineOpacity:0.7"></a-entity>
 </a-entity>
 <a-entity id="room"></a-entity>
@@ -58,7 +59,7 @@ video{width:min(94vw,850px);max-height:72vh}
 </a-scene></div>
 
 <div id="hud">
- <header><b>SIMPlanck</b> · GAME LAB 0.8<br><small>Mission 01 · Hausbesuch am Abend · <span id="room-name">Flur</span></small></header>
+ <header><b>SIMPlanck</b> · GAME LAB 0.9<br><small>Mission 01 · Hausbesuch am Abend · <span id="room-name">Flur</span></small></header>
  <div id="message">Sie arbeiten im ambulanten Pflegedienst und kommen zum Abendbesuch zu Frau Weber. Sie sitzt im Wohnzimmer. Begrüßen Sie sie zuerst. Danach handeln Sie selbstständig – die ganze Wohnung gehört dazu.</div>
  <div id="carry" hidden></div>
  <button id="end">Beenden</button><button id="menu">☰</button>
@@ -98,10 +99,10 @@ function texture(kind){const c=document.createElement('canvas');c.width=c.height
  const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.colorSpace=THREE.SRGBColorSpace;return t}
 function applyMap(e,t){const set=()=>{const m=e.getObject3D('mesh');if(m){m.material.map=t;m.material.color.set('#ffffff');m.material.needsUpdate=true}};e.addEventListener('object3dset',set);set()}
 function floor(x1,x2,z1,z2,kind){const f=box((x1+x2)/2,-.07,(z1+z2)/2,x2-x1,.14,z2-z1,'#b09570');const t=texture(kind);t.repeat.set((x2-x1)*(kind==='wood'?.7:1.2),(z2-z1)*(kind==='wood'?.7:1.2));applyMap(f,t)}
-const H=2.6;
+const H=2.6,walls=[];
 function wall(x1,z1,x2,z2,gaps=[],col='#e4dccb'){const alongX=z1===z2,a=alongX?Math.min(x1,x2):Math.min(z1,z2),b=alongX?Math.max(x1,x2):Math.max(z1,z2);let cur=a;const segs=[];for(const g of gaps.slice().sort((p,q)=>p[0]-q[0])){segs.push([cur,g[0]]);cur=g[1];
   const m=(g[0]+g[1])/2,len=g[1]-g[0];if(alongX)box(m,2.35,z1,len,.5,.15,col);else box(x1,2.35,m,.15,.5,len,col)}segs.push([cur,b]);
- for(const[s,e]of segs){if(e-s<.01)continue;const m=(s+e)/2;if(alongX){box(m,H/2,z1,e-s,H,.15,col);block(s,e,z1-.08,z1+.08)}else{box(x1,H/2,m,.15,H,e-s,col);block(x1-.08,x1+.08,s,e)}}}
+ for(const[s,e]of segs){if(e-s<.01)continue;const m=(s+e)/2;if(alongX){box(m,H/2,z1,e-s,H,.15,col);block(s,e,z1-.08,z1+.08);walls.push([s,e,z1-.08,z1+.08])}else{box(x1,H/2,m,.15,H,e-s,col);block(x1-.08,x1+.08,s,e);walls.push([x1-.08,x1+.08,s,e])}}}
 function model(name,x,y,z,ry=0,sc=1,parent=room){const e=entity('a-entity',{'gltf-model':'url(models/'+name+'.glb)',position:[x,y,z].join(' '),rotation:'0 '+ry+' 0',scale:[sc,sc,sc].join(' ')},parent);
  e.addEventListener('model-loaded',()=>{const rm=[];e.object3D.traverse(o=>{if(o.isLight)rm.push(o)});rm.forEach(o=>o.parent.remove(o))});return e}
 function rollatorModel(parent){for(const x of [-.3,.3]){box(x,.52,.3,.06,1,.06,'#737d83',parent);box(x,.52,-.3,.06,1,.06,'#737d83',parent);box(x,1.03,0,.07,.07,.7,'#343e45',parent);for(const z of [.3,-.3])sphere(x,.11,z,.11,'#29323a',parent)}box(0,.6,0,.64,.08,.5,'#353c40',parent)}
@@ -125,7 +126,7 @@ box(-1.7,.43,-2.9,1.45,.65,1.3,'#667b69');box(-1.7,1.1,-3.48,1.45,1.2,.25,'#667b
 const person=entity('a-entity',{position:'-1.7 0 -2.85'});box(0,1.04,0,.52,.65,.34,'#c9b9a0',person);sphere(0,1.53,0,.22,'#d6aa8c',person);sphere(0,1.63,-.05,.23,'#b2b2ad',person);box(-.16,.62,.3,.23,.28,.65,'#716f63',person);box(.16,.62,.3,.23,.28,.65,'#716f63',person);box(-.16,.33,.58,.22,.62,.22,'#716f63',person);box(.16,.33,.58,.22,.62,.22,'#716f63',person);box(-.35,1,.1,.15,.5,.18,'#c9b9a0',person);box(.35,1,.1,.15,.5,.18,'#c9b9a0',person);
 spot('weber','Frau Weber',-1.7,1.2,-2.5,1.1,1.3,.7);
 box(.3,.67,-1.8,1.5,.13,1.1,'#795b40');for(const x of [-.35,.95])for(const z of [-2.2,-1.4])box(x,.32,z,.09,.65,.09,'#795b40');block(-.5,1.05,-2.4,-1.2);
-cyl(0,.84,-1.8,.07,.2,'#cfe6ee');model('DiffuseTransmissionTeacup',.35,.735,-2.05,20,1);spot('glass','Leeres Glas',0,.85,-1.8,.3,.3,.3);
+const glassEl=cyl(0,.84,-1.8,.07,.2,'#cfe6ee');glassEl.setAttribute('material','color:#d9eef5;opacity:.55;transparent:true');model('DiffuseTransmissionTeacup',.35,.735,-2.05,20,1);const glassSpot=spot('glass','Leeres Glas',0,.85,-1.8,.3,.3,.3);
 box(.65,.82,-1.8,.3,.18,.22,'#e8e8e5');box(.65,.92,-1.68,.19,.025,.11,'#394c49');spot('bp','Blutdruckgerät',.65,.85,-1.8,.4,.35,.35);
 const rug=box(-1.6,.025,-.3,2.3,.05,1.8,'#9a5144'),curled=box(-.5,.08,-.3,.15,.12,1.8,'#b76a50'),rugSpot=spot('rug','Teppich',-1.6,.12,-.3,2.3,.18,1.8);
 model('GlamVelvetSofa',-4.1,0,1,90,1.15);block(-4.6,-3.05,-.5,2.5);
@@ -200,12 +201,14 @@ const planText=PLAN.map(r=>r[0]+': '+r[1]+'-'+r[2]+'-'+r[3]+' ('+r[4]+')').join(
 
 // ---------- Handlungen ----------
 const verbs={weber:()=>greeted?'Mit Frau Weber …':'Frau Weber begrüßen',glass:()=>'Glas ansehen',bp:()=>'Blutdruck messen',rug:()=>'Teppich ansprechen',shoes:()=>'Schuhe wegräumen',base:()=>'Hausnotruf prüfen',button:()=>'Notrufknopf nehmen',plan:()=>'Medikationsplan lesen',phone:()=>'Pflegefachkraft anrufen',end:()=>'Besuch beenden',tap:()=>'Glas Wasser füllen',fridge:()=>'Kühlschrank öffnen',dosette:()=>'Dosette prüfen',puddle:()=>'Boden trocknen',toilet:()=>'Toilette ansehen',log:()=>'Trinkprotokoll',rollator:()=>'Rollator nehmen'};
+const GRABHINT={glass:'Greifen Sie das Glas mit der Greiftaste (Mittelfinger) und füllen Sie es am Wasserhahn in der Küche.',tap:'Halten Sie das Glas unter den Wasserhahn. Das Glas steht im Wohnzimmer auf dem Tisch.',button:'Greifen Sie den Notrufknopf mit der Greiftaste und bringen Sie ihn an Frau Webers Handgelenk.',rollator:'Greifen Sie den Rollator am Griff und schieben Sie ihn neben Frau Webers Sessel.',shoes:'Greifen Sie die Schuhe und stellen Sie sie aus dem Weg.',puddle:'Greifen Sie das Handtuch und wischen Sie damit über die Pfütze.'};
 function noGreet(){if(!rude){rude=true;log('Ohne Begrüßung mit Maßnahmen begonnen')}say('Aus dem Wohnzimmer ruft Frau Weber: „Hallo? Wer ist denn da in meiner Wohnung?“ Begrüßen Sie zuerst Frau Weber.')}
 function act(id){
  if(id==='end'){finish();return}
  if(finished||dialogOpen)return;
  if(id==='weber'){weberMenu();return}
  if(!greeted&&id!=='plan'){noGreet();return}
+ if(inVR&&GRABHINT[id]){say(GRABHINT[id]);return}
  switch(id){
  case'glass':say(carry==='Glas Wasser'?'Geben Sie Frau Weber das Glas direkt – tippen Sie Frau Weber an.':'Das Glas auf dem Tisch ist leer. In der Küche gibt es Wasser.');break;
  case'tap':if(carry){say('Sie haben schon etwas in der Hand: '+carry+'.');break}setCarry('Glas Wasser');log('Glas Wasser in der Küche gefüllt');say('Sie füllen ein Glas mit Wasser. Bringen Sie es zu Frau Weber.');break;
@@ -215,20 +218,25 @@ function act(id){
  case'bp':measure();break;
  case'log':drinkLog();break;
  case'rug':done.add('rug');hazards.add('Teppich');log('Teppich mit Frau Weber besprochen und zur Seite gelegt');hide(rugSpot,rug,curled);say('Sie fragen Frau Weber, ob Sie den umgeschlagenen Teppich zur Seite legen dürfen. Frau Weber: „Na gut, der stört mich ja selbst.“');break;
- case'shoes':done.add('shoes');hazards.add('Schuhe');log('Schuhe aus dem Laufweg geräumt');hide(shoeSpot,shoes);say('Sie stellen die Schuhe ins Schuhregal. Der Weg vom Wohnzimmer in den Flur ist frei.');break;
- case'puddle':done.add('puddle');hazards.add('Bad');log('Nassen Boden im Bad getrocknet');hide(puddleSpot,puddle,towel);say('Sie wischen die Pfütze auf und hängen das nasse Handtuch auf. Der Boden ist trocken.');break;
+ case'shoes':removeShoes();shoes.setAttribute('visible',false);break;
+ case'puddle':dryFloor();towel.setAttribute('visible',false);break;
  case'toilet':if(!found.has('griffe')){found.add('griffe');log('Fehlende Haltegriffe im Bad bemerkt')}say('An der Toilette und in der Dusche gibt es keine Haltegriffe. Merken Sie sich das für die Übergabe.');break;
  case'base':found.add('base');log('Hausnotruf geprüft');say(done.has('alarm')?'Das Hausnotrufgerät ist eingesteckt, der Notrufknopf ist bei Frau Weber.':'Das Hausnotrufgerät ist eingesteckt und leuchtet grün. Der Notrufknopf liegt aber daneben auf der Kommode – Frau Weber trägt ihn nicht.');break;
  case'button':if(carry){say('Sie haben schon etwas in der Hand: '+carry+'.');break}setCarry('Notrufknopf');hide(buttonSpot,button);log('Notrufknopf mitgenommen');say('Sie nehmen den Notrufknopf mit. Bringen Sie ihn zu Frau Weber.');break;
  case'rollator':if(carry){say('Sie haben schon etwas in der Hand: '+carry+'.');break}setCarry('Rollator');hide(rollSpot,rollator);log('Rollator aus dem Schlafzimmer geholt');say('Sie nehmen den Rollator mit. Stellen Sie ihn Frau Weber in Reichweite.');break;
  case'phone':sbar();break;
  }}
+function giveWater(){setCarry(null);done.add('water');log('Glas Wasser gereicht');say('Frau Weber ist wach und gibt an, sicher schlucken zu können. Sie trinkt etwa die Hälfte – ungefähr 100 ml.')}
+function attachButton(){setCarry(null);done.add('alarm');hide(buttonSpot);button.setAttribute('position','-1.33 .98 -2.72');button.setAttribute('visible',true);log('Notrufknopf angelegt');say('Sie legen Frau Weber den Notrufknopf ans Handgelenk und zeigen ihr noch einmal, wie er funktioniert.')}
+function placeRollator(){setCarry(null);done.add('rollator');hide(rollSpot);rollator.setAttribute('position','-.55 0 -3.15');rollator.setAttribute('rotation','0 0 0');rollator.setAttribute('visible',true);log('Rollator in Reichweite gestellt');say('Der Rollator steht jetzt neben dem Sessel. Die Bremsen sind festgestellt.')}
+function removeShoes(){done.add('shoes');hazards.add('Schuhe');log('Schuhe aus dem Laufweg geräumt');hide(shoeSpot);say('Die Schuhe stehen nicht mehr im Weg. Der Weg vom Wohnzimmer in den Flur ist frei.')}
+function dryFloor(){done.add('puddle');hazards.add('Bad');log('Nassen Boden im Bad getrocknet');hide(puddleSpot,puddle);say('Der Boden im Bad ist trocken.')}
 function weberMenu(){
  if(!greeted){greeted=true;log('Frau Weber begrüßt und vorgestellt');say('Sie stellen sich vor und begrüßen Frau Weber. Sie berichtet über Schwindel.');play(0);return}
  const o=[];
- if(carry==='Glas Wasser')o.push({label:'Glas Wasser reichen',fn:()=>{setCarry(null);done.add('water');log('Glas Wasser gereicht');say('Frau Weber ist wach und gibt an, sicher schlucken zu können. Sie trinkt etwa die Hälfte – ungefähr 100 ml.')}});
- if(carry==='Notrufknopf')o.push({label:'Notrufknopf anlegen',fn:()=>{setCarry(null);done.add('alarm');log('Notrufknopf angelegt');say('Sie legen Frau Weber den Notrufknopf ans Handgelenk und zeigen ihr noch einmal, wie er funktioniert.')}});
- if(carry==='Rollator')o.push({label:'Rollator in Reichweite stellen',fn:()=>{setCarry(null);done.add('rollator');rollator.setAttribute('position','-.55 0 -3.15');rollator.setAttribute('visible',true);log('Rollator in Reichweite gestellt');say('Der Rollator steht jetzt neben dem Sessel. Die Bremsen sind festgestellt.')}});
+ if(carry==='Glas Wasser')o.push({label:'Glas Wasser reichen',fn:giveWater});
+ if(carry==='Notrufknopf')o.push({label:'Notrufknopf anlegen',fn:attachButton});
+ if(carry==='Rollator')o.push({label:'Rollator in Reichweite stellen',fn:placeRollator});
  if(!done.has('talk'))o.push({label:'Nach dem Trinken fragen',fn:()=>{done.add('talk');log('Nach Trinkmenge gefragt');say('Sie fragen, was Frau Weber heute getrunken hat. Sie hat noch kaum etwas getrunken.');play(1)}});
  if(!done.has('sit'))o.push({label:'Sicherheit besprechen: sitzen bleiben',fn:()=>{done.add('sit');log('Sicherheit besprochen');say('Sie bitten Frau Weber, vorerst sitzen zu bleiben und nicht allein aufzustehen. Sie ist einverstanden.')}});
  if(!done.has('move'))o.push({label:'Beim Aufstehen unterstützen',fn:mobilise});
@@ -278,7 +286,7 @@ $('#finish').onclick=finish;$('#end').onclick=finish;
 // ---------- Ablauf, Bewegung, Eingabe ----------
 use.onclick=()=>{if(target)act(target.dataset.id)};
 let lastRoom='';
-function tick(now=performance.now()){requestAnimationFrame(tick);const dt=Math.min(.05,Math.max(0,(now-last)/1000));last=now;if(!rig.object3D||!cam.object3D)return;
+function tick(now=performance.now()){const dt=Math.min(.05,Math.max(0,(now-last)/1000));last=now;if(!rig.object3D||!cam.object3D)return;if(inVR)vrUpdate(dt);
  const rc=ray.components.raycaster,old=target;target=rc&&rc.intersectedEls.find(e=>!done.has(e.dataset.id)&&e.classList.contains('usable'));
  if(old&&old.tag&&old!==target)old.tag.setAttribute('visible',false);if(target&&target.tag&&old!==target)target.tag.setAttribute('visible',true);
  use.disabled=!target||finished;use.textContent=target?(verbs[target.dataset.id]?verbs[target.dataset.id]():target.dataset.title):'Gegenstand ansehen';
@@ -299,16 +307,54 @@ let down=null;sc.addEventListener('loaded',()=>{const cv=sc.canvas;cv.addEventLi
  const us=[...room.querySelectorAll('.usable')].filter(x=>!done.has(x.dataset.id));const hits=c.intersectObjects(us.map(x=>x.object3D),true);if(hits.length){let o=hits[0].object;while(o&&!o.el?.dataset?.id)o=o.parent;if(o?.el)act(o.el.dataset.id)}})});
 addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;const m={w:'f',a:'l',s:'b',d:'r',ArrowUp:'f',ArrowDown:'b',ArrowLeft:'l',ArrowRight:'r'}[e.key];if(m)move=m;if(e.key==='e'&&target)act(target.dataset.id)});addEventListener('keyup',()=>move=null);
 // Brille
-sc.addEventListener('enter-vr',()=>{inVR=true;joy={x:0,y:0};panel.hidden=true;film.hidden=true;closeDialog();vrpanel.setAttribute('visible',true);vrtext.setAttribute('value',msg.textContent)});
+sc.addEventListener('enter-vr',()=>{inVR=true;joy={x:0,y:0};panel.hidden=true;film.hidden=true;closeDialog();vrpanel.setAttribute('visible',true);vrtext.setAttribute('value',(greeted?'':'Gehen: Stick nach vorn drücken, Ziel wählen, loslassen. Drehen: rechter Stick zur Seite. Greifen: Greiftaste (Mittelfinger). Zeigen + Abzug: Personen und Menüs.\n')+msg.textContent)});
 sc.addEventListener('exit-vr',()=>{inVR=false;vrpanel.setAttribute('visible',false);vrscreen.setAttribute('visible',false);closeDialog()});
 sc.addEventListener('click',e=>{if(!inVR)return;const el=e.target;if(el===vrscreen){stopFilm();return}if(el.onPick){el.onPick();return}if(dialogOpen)return;if(el.dataset&&el.dataset.id&&el.classList.contains('usable'))act(el.dataset.id)});
 room.addEventListener('raycaster-intersected',e=>{const t=e.target.tag;if(t&&inVR)t.setAttribute('visible',true)});
 room.addEventListener('raycaster-intersected-cleared',e=>{const t=e.target.tag;if(t&&inVR)t.setAttribute('visible',false)});
-$('#lhand').addEventListener('thumbstickmoved',e=>{const x=e.detail.x,y=e.detail.y;joy.x=Math.abs(x)>.15?x:0;joy.y=Math.abs(y)>.15?y:0});
-let turned=false;$('#rhand').addEventListener('thumbstickmoved',e=>{const x=e.detail.x;if(Math.abs(x)>.7&&!turned){turned=true;rig.object3D.rotation.y-=Math.sign(x)*Math.PI/6}else if(Math.abs(x)<.3)turned=false});
+// ---------- VR: Teleportieren & Greifen ----------
+const hands={l:$('#lhand'),r:$('#rhand')},stick={l:{x:0,y:0},r:{x:0,y:0}},aim={l:false,r:false},held={l:null,r:null};
+const marker=entity('a-ring',{'radius-inner':.16,'radius-outer':.24,rotation:'-90 0 0',material:'shader:flat;color:#f4b36b',visible:false});let tpTarget=null,turned=false;
+const HEAD=new THREE.Vector3(-1.7,1.5,-2.8),WRIST=new THREE.Vector3(-1.35,1.0,-2.7),TAP=new THREE.Vector3(8.6,1.05,1.5),ROLLSPOT=new THREE.Vector3(-.55,0,-3.15),PUDDLE=new THREE.Vector3(.1,0,9.4);
+const SURF=[[-.45,1.05,-2.35,-1.25,.735],[1.75,3.85,-4.72,-4.08,.9],[4.1,5.5,7.37,7.87,.9],[8.2,9,.6,3.6,.945],[5.8,6.8,1.2,2.0,.75],[-6.7,-6.2,-.52,-.08,.6]];
+let glassFull=false,fillT=0,wipeT=0;
+const GRAB={glass:{el:glassEl,r:.22,lift:.1},button:{el:button,r:.22,lift:0},shoes:{el:shoes,r:.45,lift:.06},towel:{el:towel,r:.45,lift:.02},rollator:{el:rollator,r:.4,handle:1.0}};
+function handPos(k,v){hands[k].object3D.getWorldPosition(v);return v}
+function grabStart(k,pinchPos){if(held[k])return;const hp=pinchPos||handPos(k,new THREE.Vector3());let best=null,bd=9;
+ for(const id in GRAB){const g=GRAB[id];if(!g.el.getAttribute('visible')&&g.el.object3D.visible===false)continue;if(id==='button'&&done.has('alarm'))continue;if(id==='rollator'&&done.has('rollator'))continue;if(Object.values(held).some(h=>h&&h.id===id))continue;
+  const o=g.el.object3D.position.clone();if(g.handle)o.y+=g.handle;const d=o.distanceTo(hp);if(d<g.r&&d<bd){bd=d;best=id}}
+ if(!best)return;if(!greeted){noGreet();return}const g=GRAB[best];held[k]={id:best,off:g.el.object3D.position.clone().sub(hp)};
+ const sp={glass:typeof glassSpot!=='undefined'?glassSpot:null,button:buttonSpot,shoes:shoeSpot,rollator:rollSpot}[best];if(sp&&sp.classList.contains('usable'))hide(sp);vibrate(k,.3,40)}
+function grabEnd(k){const h=held[k];if(!h)return;held[k]=null;const g=GRAB[h.id],o=g.el.object3D.position;
+ if(h.id==='glass'&&glassFull&&o.distanceTo(HEAD)<.5&&!done.has('water')){giveWater();glassFull=false;glassEl.setAttribute('material','color:#bfe2ef;opacity:.6;transparent:true');o.set(0,.84,-1.8);return}
+ if(h.id==='button'&&o.distanceTo(WRIST)<.4){attachButton();return}
+ if(h.id==='rollator'){if(Math.hypot(o.x-ROLLSPOT.x,o.z-ROLLSPOT.z)<1.1){placeRollator()}else if(!done.has('rollatormoved')){done.add('rollatormoved');log('Rollator aus dem Schlafzimmer geholt')}return}
+ if(h.id==='shoes'){o.y=0;if(!done.has('shoes')&&!(o.x>-.9&&o.x<.9&&o.z>4.9&&o.z<6.6)){removeShoes()}return}
+ // auf Fläche oder Boden ablegen
+ let y=0;for(const f of SURF)if(o.x>f[0]&&o.x<f[1]&&o.z>f[2]&&o.z<f[3])y=f[4];o.y=y+g.lift}
+function vibrate(k,v,ms){try{const gp=hands[k].components['tracked-controls']?.controller?.gamepad;gp?.hapticActuators?.[0]?.pulse(v,ms)}catch(e){}}
+function canStand(x,z){return x>-8.8&&x<8.8&&z>-4.8&&z<10.8&&!obstacles.some(o=>x>o[0]-.2&&x<o[1]+.2&&z>o[2]-.2&&z<o[3]+.2)}
+function clearLine(ax,az,bx,bz){const n=Math.ceil(Math.hypot(bx-ax,bz-az)/.1);for(let i=1;i<n;i++){const x=ax+(bx-ax)*i/n,z=az+(bz-az)*i/n;if(walls.some(o=>x>o[0]&&x<o[1]&&z>o[2]&&z<o[3]))return false}return true}
+function updateAim(k){const rc=hands[k].components.raycaster;if(!rc||!rc.raycaster)return null;const r=rc.raycaster.ray;if(r.direction.y>-.05)return null;const t=-r.origin.y/r.direction.y;const x=r.origin.x+r.direction.x*t,z=r.origin.z+r.direction.z*t;
+ const head=new THREE.Vector3();(cam.getObject3D('camera')||cam.object3D).getWorldPosition(head);if(Math.hypot(x-head.x,z-head.z)>6)return null;const ok=canStand(x,z)&&clearLine(head.x,head.z,x,z);return{x,z,ok}}
+function vrUpdate(dt){const hp=new THREE.Vector3();
+ for(const k of ['l','r']){const h=held[k];if(h){handPos(k,hp);const g=GRAB[h.id],o=g.el.object3D.position;
+   if(h.id==='rollator'){o.x=hp.x+h.off.x;o.z=hp.z+h.off.z;o.y=0}else{o.copy(hp).add(h.off)}
+   if(h.id==='glass'&&!glassFull&&o.distanceTo(TAP)<.3){fillT+=dt;if(fillT>1){glassFull=true;glassEl.setAttribute('material','color:#7fc4e6;opacity:.8;transparent:true');log('Glas Wasser in der Küche gefüllt');say('Das Glas ist voll. Bringen Sie es Frau Weber – halten Sie es an ihren Mund.');vibrate(k,.5,80)}}
+   if(h.id==='towel'&&!done.has('puddle')&&Math.hypot(o.x-PUDDLE.x,o.z-PUDDLE.z)<.55&&o.y<.6){wipeT+=dt;if(wipeT>1.5){dryFloor();vibrate(k,.5,80)}}}}
+ const a=aim.l?'l':aim.r?'r':null;tpTarget=a?updateAim(a):null;
+ if(tpTarget){marker.object3D.position.set(tpTarget.x,.02,tpTarget.z);marker.setAttribute('material','color',tpTarget.ok?'#7fd27a':'#d25a4a');marker.setAttribute('visible',true)}else marker.setAttribute('visible',false)}
+function teleport(){if(!tpTarget||!tpTarget.ok)return;const head=new THREE.Vector3();(cam.getObject3D('camera')||cam.object3D).getWorldPosition(head);const p=rig.object3D.position;p.x+=tpTarget.x-head.x;p.z+=tpTarget.z-head.z;tpTarget=null;marker.setAttribute('visible',false)}
+for(const k of ['l','r']){const el=hands[k];
+ el.addEventListener('thumbstickmoved',e=>{const x=e.detail.x,y=e.detail.y;stick[k]={x,y};
+  if(y<-.6&&Math.abs(x)<.6)aim[k]=true;else if(aim[k]&&Math.hypot(x,y)<.3){aim[k]=false;teleport()}
+  if(k==='r'&&!aim.r){if(Math.abs(x)>.7&&!turned){turned=true;rig.object3D.rotation.y-=Math.sign(x)*Math.PI/6}else if(Math.abs(x)<.3)turned=false}});
+ el.addEventListener('gripdown',()=>grabStart(k));el.addEventListener('gripup',()=>grabEnd(k))}
+for(const[k,sel]of[['l','#lhandT'],['r','#rhandT']]){const el=$(sel);if(!el)continue;el.addEventListener('pinchstarted',e=>{const p=e.detail&&e.detail.position;grabStart(k,p?new THREE.Vector3(p.x,p.y,p.z):null)});el.addEventListener('pinchended',()=>grabEnd(k))}
+
 // zum Testen
-window.__sim={act,weberMenu,finish,state:()=>({greeted,carry,done:[...done],found:[...found],bpOk,drinkOk,medOk,sbarScore,hazards:[...hazards],history})};
-tick();
+window.__sim={vr:{grabStart,grabEnd,teleport,held,hands,GRAB,aim,get tp(){return tpTarget},set tp(v){tpTarget=v}},act,weberMenu,finish,state:()=>({greeted,carry,done:[...done],found:[...found],bpOk,drinkOk,medOk,sbarScore,hazards:[...hazards],history})};
+AFRAME.registerComponent('sim-tick',{tick(t){tick(performance.now())}});sc.setAttribute('sim-tick','');
 }
 </script>
 </body>
