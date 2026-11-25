@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>SIMPlanck Game Lab 0.10</title>
+<title>SIMPlanck Game Lab 0.11</title>
 <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
 <style>
 *{box-sizing:border-box}
@@ -36,6 +36,7 @@ button{border:1px solid #7190a6;background:#183c57ef;color:#fff;border-radius:12
 #film{position:absolute;inset:0;background:#000d;display:flex;align-items:center;justify-content:center;flex-direction:column;pointer-events:auto;z-index:12}
 video{width:min(94vw,850px);max-height:72vh}
 #panel[hidden],#film[hidden],#dlg[hidden]{display:none}
+#intro{inset:0;z-index:20;border-radius:0;background:#142334;display:flex;flex-direction:column;align-items:center;padding:max(18px,env(safe-area-inset-top)) 16px 24px}#intro>div{width:min(620px,100%)}#intro h2{color:#f4b36b;margin:6px 0 4px;font-size:22px}#intro h3{color:#f4b36b;font-size:16px;margin:16px 0 4px}#intro p,#intro li{line-height:1.45;font-size:15px}#intro .card{background:#1d3650;border-radius:10px;padding:12px 14px;margin:8px 0}#intro textarea,#refl textarea{width:100%;min-height:64px;font:15px system-ui;border-radius:8px;border:1px solid #7190a6;background:#0f2234;color:#fff;padding:8px;pointer-events:auto}#intro[hidden]{display:none}#refl label{display:block;margin:8px 0 4px;font-size:14px}.go{background:#b65d17;border-color:#f4b36b;font-weight:600;width:100%;margin-top:14px}
 #report ul{padding-left:0;list-style:none;margin:8px 0}#report li{margin:4px 0;font-size:14px}
 </style>
 </head>
@@ -48,6 +49,7 @@ video{width:min(94vw,850px);max-height:72vh}
   <a-entity id="ray" raycaster="objects:.usable;far:3;interval:100"></a-entity>
   <a-entity id="vrpanel" position="0 -0.34 -1.1" visible="false"><a-plane id="vrbg" width="1.05" height="0.36" material="color:#122337;opacity:0.88;transparent:true;shader:flat"></a-plane><a-text id="vrtext" value="" width="0.98" wrap-count="46" color="#ffffff" anchor="left" baseline="center" position="-0.49 0 0.01"></a-text></a-entity>
   <a-entity id="carryvis" position="0.24 -0.3 -0.55" visible="false"></a-entity>
+  <a-sphere id="fade" radius="0.3" material="shader:flat;color:#000;side:back;opacity:0;transparent:true;depthTest:false" visible="false"></a-sphere>
  </a-entity>
  <a-entity id="lhand" laser-controls="hand:left" raycaster="objects:.usable,.vrbtn;far:6;lineColor:#f4b36b;lineOpacity:0.7"></a-entity>
  <a-entity id="lhandT" hand-tracking-controls="hand:left;modelColor:#e2b79c"></a-entity><a-entity id="rhandT" hand-tracking-controls="hand:right;modelColor:#e2b79c"></a-entity>
@@ -59,7 +61,7 @@ video{width:min(94vw,850px);max-height:72vh}
 </a-scene></div>
 
 <div id="hud">
- <header><b>SIMPlanck</b> · GAME LAB 0.10<br><small>Mission 01 · Hausbesuch am Abend · <span id="room-name">Flur</span></small></header>
+ <header><b>SIMPlanck</b> · GAME LAB 0.11<br><small>Mission 01 · Hausbesuch am Abend · <span id="room-name">Flur</span></small></header>
  <div id="message">Sie arbeiten im ambulanten Pflegedienst und kommen zum Abendbesuch zu Frau Weber. Sie sitzt im Wohnzimmer. Begrüßen Sie sie zuerst. Danach handeln Sie selbstständig – die ganze Wohnung gehört dazu.</div>
  <div id="carry" hidden></div>
  <button id="end">Beenden</button><button id="menu">☰</button>
@@ -69,6 +71,13 @@ video{width:min(94vw,850px);max-height:72vh}
  <div id="ki">Videos KI-generiert (Seedance, Adobe Firefly)</div>
  <button id="use" disabled>Gegenstand ansehen</button>
  <div id="panel" class="sheet" hidden><button id="close">Schließen</button><h3>Hausbesuch</h3><div id="report"><small>Hier erscheint nach „Beenden“ Ihr Protokoll.</small></div><button id="finish">Besuch beenden</button> <button onclick="location.reload()">Neustart</button><p><small>Frau Weber ist eine erfundene Person. Medikamente und Werte sind fiktiv. Die Videos sind KI-generiert (Seedance, Adobe Firefly).</small></p><p><small>3D-Modelle aus den Khronos glTF Sample Assets: Teetasse, Vase, Wasserflasche – CC0. Lampe „LightsPunctualLamp“ © 2021 DGG · Schuh „MaterialsVariantsShoe“ © 2021 Shopify – jeweils CC BY 4.0 (creativecommons.org/licenses/by/4.0). Sessel, Sofa, Couchtisch, Pflanze, Schränke, Kommode, Bett, Nachttisch, Stuhl, Uhren, Wandtelefon, Spiegel, Wasserkocher, Bilderrahmen, Medizinkasten: Poly Haven (polyhaven.com), CC0.</small></p></div>
+ <div id="intro" class="sheet"><div>
+  <small>SIMPlanck · Lernaufgabe · VR-Station</small><h2>Hausbesuch am Abend: Frau Weber</h2>
+  <h3>1 · Fallkarte</h3><div class="card"><p>Frau Weber lebt allein in ihrer Wohnung. Sie hat Bluthochdruck und Diabetes und bekommt jeden Abend Besuch vom ambulanten Pflegedienst. Heute hat sie im Büro angerufen: Ihr sei „ganz komisch und schwindelig“.</p><p><b>Ihr Auftrag:</b> Sie machen den Abendbesuch. Schätzen Sie die Situation ein, sorgen Sie für Sicherheit und geben Sie Ihre Beobachtungen an die Pflegefachkraft weiter.</p></div>
+  <h3>2 · Ziele</h3><ul><li>Ich erhebe Vitalzeichen, Trinkmenge und Medikamente und dokumentiere sie richtig.</li><li>Ich erkenne Sturzrisiken in der Wohnung und beseitige sie in Absprache mit Frau Weber.</li><li>Ich gebe meine Beobachtungen strukturiert nach SBAR weiter.</li></ul>
+  <h3>3 · Annäherung</h3><p>Woran denken Sie zuerst, wenn eine ältere Frau, die allein lebt, über Schwindel klagt?</p><textarea id="pre" placeholder="Stichworte (freiwillig)"></textarea>
+  <button class="go" id="start">Hausbesuch beginnen</button><p><small id="varinfo"></small> · Mit VR-Brille: nach dem Start unten rechts auf „VR“.</p>
+ </div></div>
  <div id="dlg" class="sheet" hidden></div>
  <div id="film" hidden><video id="video" controls playsinline></video><button id="skip">Zurück in die Wohnung</button><small>KI-generiertes Video</small></div>
 </div>
@@ -82,6 +91,12 @@ const fw=new THREE.Vector3(),tmpP=new THREE.Vector3();
 let history=[],done=new Set(),found=new Set(),target=null,move=null,elapsed=0,unsafe=false,finished=false,joy={x:0,y:0},last=performance.now(),warned=false,attempted=false;
 let greeted=false,rude=false,inVR=false,carry=null,dialogOpen=false,sbarScore=null,bpOk=false,drinkOk=false,medOk=null,hazards=new Set();
 const obstacles=[];
+// ---------- Varianten (Zufall, für die Lehrkraft nachvollziehbar über ?variante=) ----------
+const MEDS=['tora','rami','ok'],MOODS=['ruhig','unruhig','misstrauisch'],YEST=[550,450,650];
+const HZALL=['rug','shoes','puddle'],HZNAME={rug:'Teppich',shoes:'Schuhe',puddle:'nasser Boden im Bad'};
+function pickVariant(){const q=new URLSearchParams(location.search).get('variante');if(q&&/^[0-2][0-2][3567][0-2]$/.test(q))return q;const masks=[3,5,6,7];return ''+Math.floor(Math.random()*3)+Math.floor(Math.random()*3)+masks[Math.floor(Math.random()*4)]+Math.floor(Math.random()*3)}
+const VCODE=pickVariant(),VAR={med:MEDS[+VCODE[0]],mood:MOODS[+VCODE[1]],hz:HZALL.filter((h,i)=>+VCODE[2]&(1<<i)),yest:YEST[+VCODE[3]]};
+let started=false,introOk=null;
 const CLIPS=['begruessung.mp4','trinkmenge.mp4',null]; // 0 Begrüßung · 1 Trinkmenge · 2 Aufstehen (noch offen)
 
 // ---------- Bausteine ----------
@@ -164,6 +179,12 @@ model('ph_painted_wooden_nightstand',-6.45,0,-.3,0,1);model('ph_alarm_clock_01',
 box(-8.7,1,4,.55,2,1.5,'#9b7b58');block(-9,-8.4,3.2,4.8);
 const rollator=entity('a-entity',{position:'-6.2 0 3.6'});rollatorModel(rollator);const rollSpot=spot('rollator','Rollator',-6.2,.6,3.6,.9,1.2,.9);
 
+// Stolperfallen dieser Variante
+const HZOBJ={rug:()=>[rugSpot,rug,curled],shoes:()=>[shoeSpot,shoes],puddle:()=>[puddleSpot,puddle,towel]};
+for(const h of HZALL)if(!VAR.hz.includes(h)){const[sp,...o]=HZOBJ[h]();sp.classList.remove('usable');sp.setAttribute('visible',false);o.forEach(x=>x.setAttribute('visible',false))}
+// Wasser im Glas
+const water=entity('a-cylinder',{radius:.058,height:.15,position:'0 -.015 0',material:'color:#5fb0e0;opacity:.8;transparent:true',visible:false},glassEl);
+function waterLevel(f){water.setAttribute('visible',f>0);water.object3D.scale.y=Math.max(.01,f);water.object3D.position.y=-.09+.075*f}
 // ---------- Zustand & Anzeige ----------
 function say(t){msg.textContent=t;vrtext.setAttribute('value',t)}
 function setCarry(c){carry=c;carryEl.hidden=!c;carryEl.textContent=c?'In der Hand: '+c:'';carryvis.innerHTML='';carryvis.setAttribute('visible',!!c);
@@ -204,6 +225,7 @@ const verbs={weber:()=>greeted?'Mit Frau Weber …':'Frau Weber begrüßen',glas
 const GRABHINT={glass:'Greifen Sie das Glas mit der Greiftaste (Mittelfinger) und füllen Sie es am Wasserhahn in der Küche.',tap:'Halten Sie das Glas unter den Wasserhahn. Das Glas steht im Wohnzimmer auf dem Tisch.',button:'Greifen Sie den Notrufknopf mit der Greiftaste und bringen Sie ihn an Frau Webers Handgelenk.',rollator:'Greifen Sie den Rollator am Griff und schieben Sie ihn neben Frau Webers Sessel.',shoes:'Greifen Sie die Schuhe und stellen Sie sie aus dem Weg.',puddle:'Greifen Sie das Handtuch und wischen Sie damit über die Pfütze.'};
 function noGreet(){if(!rude){rude=true;log('Ohne Begrüßung mit Maßnahmen begonnen')}say('Aus dem Wohnzimmer ruft Frau Weber: „Hallo? Wer ist denn da in meiner Wohnung?“ Begrüßen Sie zuerst Frau Weber.')}
 function act(id){
+ if(!started)return;
  if(id==='end'){finish();return}
  if(finished||dialogOpen)return;
  if(id==='weber'){weberMenu();return}
@@ -226,13 +248,18 @@ function act(id){
  case'rollator':if(carry){say('Sie haben schon etwas in der Hand: '+carry+'.');break}setCarry('Rollator');hide(rollSpot,rollator);log('Rollator aus dem Schlafzimmer geholt');say('Sie nehmen den Rollator mit. Stellen Sie ihn Frau Weber in Reichweite.');break;
  case'phone':sbar();break;
  }}
-function giveWater(){setCarry(null);done.add('water');log('Glas Wasser gereicht');say('Frau Weber ist wach und gibt an, sicher schlucken zu können. Sie trinkt etwa die Hälfte – ungefähr 100 ml.')}
+function giveWater(){setCarry(null);waterLevel(.5);done.add('water');log('Glas Wasser gereicht');say('Frau Weber ist wach und gibt an, sicher schlucken zu können. Sie trinkt etwa die Hälfte – ungefähr 100 ml.')}
 function attachButton(){setCarry(null);done.add('alarm');hide(buttonSpot);button.setAttribute('position','-1.33 .98 -2.72');button.setAttribute('visible',true);log('Notrufknopf angelegt');say('Sie legen Frau Weber den Notrufknopf ans Handgelenk und zeigen ihr noch einmal, wie er funktioniert.')}
 function placeRollator(){setCarry(null);done.add('rollator');hide(rollSpot);rollator.setAttribute('position','-.55 0 -3.15');rollator.setAttribute('rotation','0 0 0');rollator.setAttribute('visible',true);log('Rollator in Reichweite gestellt');say('Der Rollator steht jetzt neben dem Sessel. Die Bremsen sind festgestellt.')}
 function removeShoes(){done.add('shoes');hazards.add('Schuhe');log('Schuhe aus dem Laufweg geräumt');hide(shoeSpot);say('Die Schuhe stehen nicht mehr im Weg. Der Weg vom Wohnzimmer in den Flur ist frei.')}
 function dryFloor(){done.add('puddle');hazards.add('Bad');log('Nassen Boden im Bad getrocknet');hide(puddleSpot,puddle);say('Der Boden im Bad ist trocken.')}
 function weberMenu(){
- if(!greeted){greeted=true;log('Frau Weber begrüßt und vorgestellt');say('Sie stellen sich vor und begrüßen Frau Weber. Sie berichtet über Schwindel.');play(0);return}
+ if(!greeted){const ok=()=>{greeted=true;log('Frau Weber begrüßt und vorgestellt');say('Sie stellen sich vor und begrüßen Frau Weber. Sie berichtet über Schwindel.'+({unruhig:' Sie wirkt unruhig und rutscht im Sessel hin und her.',misstrauisch:' Erst als sie Ihren Ausweis gesehen hat, entspannt sie sich etwas.'}[VAR.mood]||''));play(0)};
+  if(VAR.mood!=='misstrauisch'){ok();return}
+  dialog({title:'Frau Weber',text:'Frau Weber schaut Sie misstrauisch an: „Wer sind Sie denn? Sie kenne ich gar nicht.“ Was tun Sie?',options:shuffle([
+   {label:'Mich mit Namen und Pflegedienst vorstellen und den Dienstausweis zeigen',fn:()=>{if(introOk===null)introOk=true;ok()}},
+   {label:'„Ich bin’s nur, ich schau mal nach Ihnen.“',fn:()=>{introOk=false;log('Unvollständig vorgestellt');say('Frau Weber: „Das kann ja jeder sagen!“ Sie bleibt misstrauisch. Versuchen Sie es noch einmal.')}},
+   {label:'Gleich fragen, wo das Blutdruckgerät liegt',fn:()=>{introOk=false;log('Ohne Vorstellung nach dem Blutdruckgerät gefragt');say('Frau Weber zieht die Hand weg: „Erst sagen Sie mir mal, wer Sie sind!“')}}])});return}
  const o=[];
  if(carry==='Glas Wasser')o.push({label:'Glas Wasser reichen',fn:giveWater});
  if(carry==='Notrufknopf')o.push({label:'Notrufknopf anlegen',fn:attachButton});
@@ -249,39 +276,49 @@ function measure(){if(!done.has('bpm')){done.add('bpm');log('Blutdruck gemessen'
  dialog({title:'Blutdruckgerät',html:'<p>Das Gerät zeigt:</p><p style="font:600 26px monospace;background:#394c49;color:#c9f5c0;padding:10px;border-radius:8px;text-align:center">SYS 95 · DIA 60 · PUL 102</p><p>Tragen Sie die Werte in die Dokumentation ein.</p>',text:'Anzeige: SYS 95 · DIA 60 · PUL 102\nWelche Werte dokumentieren Sie?',inputs:[{key:'sys',label:'Systolisch',unit:'mmHg'},{key:'dia',label:'Diastolisch',unit:'mmHg'},{key:'pul',label:'Puls',unit:'/min'}],vrOptions:shuffle(vr),submit:v=>bpEntered(v.sys,v.dia,v.pul)})}
 function bpEntered(s,d,p){if(s===95&&d===60&&p===102){bpOk=true;done.add('bp');found.add('bp');log('Vitalwerte dokumentiert: RR 95/60 mmHg, Puls 102/min');say('Dokumentiert: RR 95/60 mmHg, Puls 102/min. Der Blutdruck ist niedrig, der Puls erhöht.')}else{log('Vitalwerte falsch dokumentiert ('+s+'/'+d+', Puls '+p+')');say('Die eingetragenen Werte stimmen nicht mit der Anzeige überein. Messen Sie noch einmal und tragen Sie genau ab.')}}
 function drinkLog(){found.add('log');if(!done.has('logread')){done.add('logread');log('Trinkprotokoll angesehen')}
- const tbl='<table><tr><th>Zeit</th><th>Getränk</th><th>ml</th></tr><tr><td colspan=3><b>Gestern</b></td></tr><tr><td>07:30</td><td>Kaffee</td><td>150</td></tr><tr><td>12:00</td><td>Wasser</td><td>200</td></tr><tr><td>18:00</td><td>Tee</td><td>200</td></tr><tr><td colspan=2>Summe gestern</td><td>550</td></tr><tr><td colspan=3><b>Heute</b></td></tr><tr><td colspan=3>noch keine Einträge</td></tr></table>';
- const txt='Gestern: 07:30 Kaffee 150 ml, 12:00 Wasser 200 ml, 18:00 Tee 200 ml = 550 ml. Heute: noch keine Einträge.';
+ const Y={550:[150,200,200],450:[150,150,150],650:[150,250,250]}[VAR.yest],Yd=[['07:30','Kaffee'],['12:00','Wasser'],['18:00','Tee']];
+ const tbl='<table><tr><th>Zeit</th><th>Getränk</th><th>ml</th></tr><tr><td colspan=3><b>Gestern</b></td></tr>'+Yd.map((r,i)=>'<tr><td>'+r[0]+'</td><td>'+r[1]+'</td><td>'+Y[i]+'</td></tr>').join('')+'<tr><td colspan=2>Summe gestern</td><td>'+VAR.yest+'</td></tr><tr><td colspan=3><b>Heute</b></td></tr><tr><td colspan=3>noch keine Einträge</td></tr></table>';
+ const txt='Gestern: '+Yd.map((r,i)=>r[0]+' '+r[1]+' '+Y[i]+' ml').join(', ')+' = '+VAR.yest+' ml. Heute: noch keine Einträge.';
  if(!done.has('water')||drinkOk){dialog({title:'Trinkprotokoll',html:tbl+(drinkOk?'<p>Ihr Eintrag: heute 100 ml Wasser.</p>':'<p>Bringen Sie Frau Weber etwas zu trinken und tragen Sie die Menge danach hier ein.</p>'),text:txt+(drinkOk?'\nIhr Eintrag: heute 100 ml Wasser.':'')});return}
  dialog({title:'Trinkprotokoll',html:tbl+'<p>Wie viel hat Frau Weber bei Ihrem Besuch getrunken?</p>',text:txt+'\nWie viel hat Frau Weber bei Ihrem Besuch getrunken?',inputs:[{key:'ml',label:'Wasser',unit:'ml'}],vrOptions:shuffle([{label:'100 ml',fn:()=>drinkEntered(100)},{label:'200 ml',fn:()=>drinkEntered(200)},{label:'550 ml',fn:()=>drinkEntered(550)}]),submit:v=>drinkEntered(v.ml)})}
-function drinkEntered(ml){if(ml>=80&&ml<=120){drinkOk=true;done.add('drinklog');log('Trinkmenge dokumentiert: '+ml+' ml');say('Eingetragen: '+ml+' ml Wasser. Gestern hat Frau Weber nur etwa 550 ml getrunken.')}else{log('Trinkmenge falsch dokumentiert ('+ml+' ml)');say('Das passt nicht: Frau Weber hat etwa die Hälfte des Glases getrunken.')}}
-function dosette(){found.add('dosette');if(!done.has('dosread')){done.add('dosread');log('Dosette angesehen')}
- const html='<p>Wochendosette, Fächer für heute (Mittwoch) und morgen (Donnerstag):</p><table><tr><th></th><th>morgens</th><th>mittags</th><th>abends</th></tr><tr><td>Mi</td><td>leer</td><td>leer</td><td>Metformin</td></tr><tr><td>Do</td><td>Ramipril, Torasemid, Metformin</td><td>Torasemid</td><td>Metformin</td></tr></table>'+(found.has('plan')?'<p>Zum Vergleich der Medikationsplan:</p>'+planHtml:'<p><small>Der Medikationsplan hängt an der Pinnwand im Flur.</small></p>')+'<p><b>Was fällt Ihnen auf?</b></p>';
- const txt='Dosette Mi: morgens leer, mittags leer, abends Metformin. Do: morgens Ramipril, Torasemid, Metformin · mittags Torasemid · abends Metformin.'+(found.has('plan')?'\nPlan: '+planText.replace(/\n/g,' · '):'\n(Plan hängt im Flur.)')+'\nWas fällt Ihnen auf?';
- const o=shuffle([{label:'Torasemid liegt auch mittags drin – laut Plan nur morgens',fn:()=>{medOk=true;found.add('med');log('Dosette geprüft: Torasemid zusätzlich mittags gestellt');say('Richtig: Torasemid ist zusätzlich im Mittagsfach. Frau Weber hat es heute vermutlich zweimal genommen. Sie ändern nichts selbst – das gehört in die Übergabe.')}},
-  {label:'Metformin fehlt morgens',fn:()=>{medOk=false;log('Dosette geprüft: Auffälligkeit nicht erkannt');say('Prüfen Sie noch einmal: Metformin liegt morgens und abends drin, wie im Plan.')}},
-  {label:'Alles stimmt mit dem Plan überein',fn:()=>{medOk=false;log('Dosette geprüft: Auffälligkeit nicht erkannt');say('Vergleichen Sie Fach für Fach mit dem Medikationsplan im Flur.')}}]);
+function drinkEntered(ml){if(ml>=80&&ml<=120){drinkOk=true;done.add('drinklog');log('Trinkmenge dokumentiert: '+ml+' ml');say('Eingetragen: '+ml+' ml Wasser. Gestern hat Frau Weber nur etwa '+VAR.yest+' ml getrunken.')}else{log('Trinkmenge falsch dokumentiert ('+ml+' ml)');say('Das passt nicht: Frau Weber hat etwa die Hälfte des Glases getrunken.')}}
+const DOS={tora:{do:['Ramipril, Torasemid, Metformin','Torasemid','Metformin'],ok:'tora',msg:'Richtig: Torasemid (entwässert) liegt zusätzlich im Mittagsfach. Frau Weber hat es heute vermutlich zweimal genommen.'},
+ rami:{do:['Ramipril (2 Tabletten), Torasemid, Metformin','–','Metformin'],ok:'rami',msg:'Richtig: Ramipril (senkt den Blutdruck) liegt morgens doppelt drin. Frau Weber hat heute früh vermutlich zwei Tabletten genommen.'},
+ ok:{do:['Ramipril, Torasemid, Metformin','–','Metformin'],ok:'ok',msg:'Richtig: Die Dosette stimmt mit dem Plan überein. Der Schwindel hat hier wohl eine andere Ursache – denken Sie an die Trinkmenge.'}};
+const MEDLBL={tora:'Torasemid liegt zusätzlich mittags drin – laut Plan nur morgens',rami:'Ramipril liegt morgens doppelt drin – laut Plan eine Tablette',met:'Metformin fehlt morgens',ok:'Alles stimmt mit dem Plan überein'};
+function dosette(){found.add('dosette');if(!done.has('dosread')){done.add('dosread');log('Dosette angesehen')}const D=DOS[VAR.med];
+ const html='<p>Wochendosette, Fächer für heute (Mittwoch) und morgen (Donnerstag):</p><table><tr><th></th><th>morgens</th><th>mittags</th><th>abends</th></tr><tr><td>Mi</td><td>leer</td><td>'+(VAR.med==='tora'?'leer':'–')+'</td><td>Metformin</td></tr><tr><td>Do</td><td>'+D.do.join('</td><td>')+'</td></tr></table>'+(found.has('plan')?'<p>Zum Vergleich der Medikationsplan:</p>'+planHtml:'<p><small>Der Medikationsplan hängt an der Pinnwand im Flur.</small></p>')+'<p><b>Was fällt Ihnen auf?</b></p>';
+ const txt='Dosette Mi: morgens leer, mittags '+(VAR.med==='tora'?'leer':'–')+', abends Metformin. Do: morgens '+D.do[0]+' · mittags '+D.do[1]+' · abends '+D.do[2]+'.'+(found.has('plan')?'\nPlan: '+planText.replace(/\n/g,' · '):'\n(Plan hängt im Flur.)')+'\nWas fällt Ihnen auf?';
+ const o=shuffle(['tora','rami','met','ok'].map(k=>({label:MEDLBL[k],fn:()=>{if(k===D.ok){medOk=true;found.add('med');log('Dosette geprüft: '+MEDLBL[k]);say(D.msg+' Sie ändern nichts selbst – das gehört in die Übergabe.')}else{medOk=false;log('Dosette geprüft: falsch eingeschätzt ('+MEDLBL[k]+')');say('Vergleichen Sie Fach für Fach mit dem Medikationsplan im Flur.')}}})));
  dialog({title:'Tablettendosette',html,text:txt,options:o})}
 const SBAR=[
  ['S – Situation',[['Ich bin bei Frau Weber. Sie ist schwindelig und hat heute kaum getrunken.',1],['Ich bin bei Frau Weber. Es geht ihr gut, sie ist nur etwas müde.',0],['Ich bin bei Frau Weber. Der Teppich lag schief.',0]]],
- ['B – Hintergrund',[['Sie nimmt laut Plan morgens Torasemid. Gestern hat sie nur etwa 550 ml getrunken.',1],['Sie wohnt allein und hat einen Rollator.',0],['Ihre Tochter war letzte Woche zu Besuch.',0]]],
- ['A – Einschätzung',[['RR 95/60 mmHg, Puls 102/min. Torasemid war zusätzlich mittags gestellt.',1],['Blutdruck und Puls sind normal.',0],['Ich glaube, sie ist erkältet.',0]]],
+ ['B – Hintergrund',[[{tora:'Sie nimmt laut Plan morgens Torasemid zum Entwässern.',rami:'Sie nimmt laut Plan morgens Ramipril gegen Bluthochdruck.',ok:'Sie nimmt ihre Medikamente laut Plan; die Dosette stimmt.'}[VAR.med]+' Gestern hat sie nur etwa '+VAR.yest+' ml getrunken.',1],['Sie wohnt allein und hat einen Rollator.',0],['Ihre Tochter war letzte Woche zu Besuch.',0]]],
+ ['A – Einschätzung',[['RR 95/60 mmHg, Puls 102/min. '+{tora:'Torasemid war zusätzlich mittags gestellt.',rami:'Ramipril lag heute morgens doppelt in der Dosette.',ok:'Ich vermute, sie hat zu wenig getrunken.'}[VAR.med],1],['Blutdruck und Puls sind normal.',0],['Ich glaube, sie ist erkältet.',0]]],
  ['R – Empfehlung',[['Bitte um Rückruf und Abklärung. Bis dahin bleibt sie sitzen, trinkt in kleinen Schlucken, der Notrufknopf ist am Handgelenk.',1],['Ich gebe ihr noch eine Tablette gegen den Blutdruck.',0],['Ich gehe jetzt, sie soll sich ausruhen.',0]]]];
 function sbar(){if(done.has('call')){say('Sie haben die Pflegefachkraft schon informiert. Sie ruft zurück.');return}let score=0,step=0;
  const next=()=>{if(step>=SBAR.length){done.add('call');sbarScore=score;log('Übergabe nach SBAR: '+score+' von 4 passend');
-   const miss=[];if(!found.has('bp'))miss.push('Blutdruck und Puls');if(!found.has('log'))miss.push('Trinkprotokoll');if(!found.has('med'))miss.push('Auffälligkeit in der Dosette');
+   const miss=[];if(!found.has('bp'))miss.push('Blutdruck und Puls');if(!found.has('log'))miss.push('Trinkprotokoll');if(!found.has('med'))miss.push('Prüfung der Dosette');
    say('Pflegefachkraft: „Danke. Ich informiere die Hausärztin und rufe Sie gleich zurück. Bitte bleiben Sie so lange bei Frau Weber.“ ('+score+' von 4 Teilen passend'+(miss.length?'; noch nicht selbst erhoben: '+miss.join(', '):'')+')');return}
   const[t,opts]=SBAR[step];dialog({title:'Übergabe am Telefon · '+t,text:'Was sagen Sie?',options:shuffle(opts.map(([l,ok])=>({label:l,fn:()=>{score+=ok;step++;next()}})))})};
  log('Pflegefachkraft angerufen');next()}
 
 // ---------- Auswertung ----------
 function finish(){if(finished){panel.hidden=false;return}finished=true;closeDialog();move=null;joy={x:0,y:0};
- const items=[[greeted&&!rude,'Begrüßt und vorgestellt, bevor Sie gehandelt haben'],[done.has('sit'),'Sicherheit besprochen: Frau Weber bleibt sitzen'],[bpOk,'Blutdruck und Puls gemessen und richtig dokumentiert'],[found.has('log'),'Trinkprotokoll angesehen'],[done.has('water'),'Glas Wasser aus der Küche gebracht'],[drinkOk,'Trinkmenge dokumentiert'],[medOk===true,'Dosette mit dem Plan verglichen, Torasemid mittags erkannt'],[hazards.size===3,'Stolperfallen beseitigt ('+hazards.size+' von 3: Teppich, Schuhe, Bad)'],[found.has('griffe'),'Fehlende Haltegriffe im Bad bemerkt'],[done.has('alarm'),'Notrufknopf angelegt'],[done.has('rollator'),'Rollator in Reichweite gestellt'],[sbarScore===4,'Übergabe nach SBAR'+(sbarScore===null?' (nicht erfolgt)':' ('+sbarScore+' von 4 passend)')],[!unsafe,'Keine Mobilisation trotz Schwindel']];
+ const items=[[greeted&&!rude&&introOk!==false,'Begrüßt und vorgestellt, bevor Sie gehandelt haben'],[done.has('sit'),'Sicherheit besprochen: Frau Weber bleibt sitzen'],[bpOk,'Blutdruck und Puls gemessen und richtig dokumentiert'],[found.has('log'),'Trinkprotokoll angesehen'],[done.has('water'),'Glas Wasser aus der Küche gebracht'],[drinkOk,'Trinkmenge dokumentiert'],[medOk===true,'Dosette mit dem Plan verglichen und richtig eingeschätzt'],[VAR.hz.every(h=>done.has(h)),'Stolperfallen beseitigt ('+VAR.hz.filter(h=>done.has(h)).length+' von '+VAR.hz.length+': '+VAR.hz.map(h=>HZNAME[h]).join(', ')+')'],[found.has('griffe'),'Fehlende Haltegriffe im Bad bemerkt'],[done.has('alarm'),'Notrufknopf angelegt'],[done.has('rollator'),'Rollator in Reichweite gestellt'],[sbarScore===4,'Übergabe nach SBAR'+(sbarScore===null?' (nicht erfolgt)':' ('+sbarScore+' von 4 passend)')],[!unsafe,'Keine Mobilisation trotz Schwindel']];
  const notes=[];if(done.has('move')&&!bpOk)notes.push('Sie haben das Aufstehen geübt, bevor Blutdruck und Puls bekannt waren.');if(attempted&&!done.has('move'))notes.push('Frau Weber ist allein aufgestanden. Was hätte das verhindert?');
  const n=items.filter(i=>i[0]).length;
- $('#report').innerHTML='<b>Ihr Besuch: '+n+' von '+items.length+'</b><ul>'+items.map(i=>'<li>'+(i[0]?'✓ ':'✗ ')+esc(i[1])+'</li>').join('')+'</ul>'+(notes.length?'<p>'+esc(notes.join(' '))+'</p>':'')+'<p><b>Für die Nachbesprechung:</b> Wie hängen Schwindel, Trinkmenge und Medikamente bei Frau Weber zusammen? Was hätten Sie in welcher Reihenfolge getan?</p><small>Ihr Ablauf: '+esc(history.join(' → ')||'keine Maßnahmen')+'</small>';
+ $('#report').innerHTML='<b>Ihr Besuch: '+n+' von '+items.length+'</b><ul>'+items.map(i=>'<li>'+(i[0]?'✓ ':'✗ ')+esc(i[1])+'</li>').join('')+'</ul>'+(notes.length?'<p>'+esc(notes.join(' '))+'</p>':'')+'<p><small>Variante '+VCODE+': Dosette '+{tora:'Torasemid mittags',rami:'Ramipril doppelt',ok:'korrekt'}[VAR.med]+' · Frau Weber '+VAR.mood+' · Trinkmenge gestern '+VAR.yest+' ml</small></p><h3>4 · Auswertung und Reflexion</h3><p><b>Für die Nachbesprechung:</b> Wie hängen Schwindel, Trinkmenge und Medikamente bei Frau Weber zusammen? Was hätten Sie in welcher Reihenfolge getan?</p><div id="refl"><label>Das ist mir gut gelungen:</label><textarea id="r1"></textarea><label>Das mache ich beim nächsten Mal anders:</label><textarea id="r2"></textarea><label>Mein nächstes Lernziel:</label><textarea id="r3"></textarea><button class="go" id="copy">Protokoll kopieren (für die Nachbesprechung)</button><small id="copied"></small></div><p><small>Ihr Ablauf: '+esc(history.join(' → ')||'keine Maßnahmen')+'</small></p><p><button onclick="location.search=\'?variante=\'+Math.floor(Math.random()*3)+Math.floor(Math.random()*3)+[3,5,6,7][Math.floor(Math.random()*4)]+Math.floor(Math.random()*3)">Neue Variante spielen</button></p>';
+ window.__report={n,items,notes};
+ $('#copy').onclick=()=>{const t='SIMPlanck · Hausbesuch Frau Weber · Variante '+VCODE+'\n'+new Date().toLocaleString('de-DE')+'\nErgebnis: '+n+' von '+items.length+'\n'+items.map(i=>(i[0]?'[x] ':'[ ] ')+i[1]).join('\n')+(notes.length?'\nHinweise: '+notes.join(' '):'')+'\n\nAnnäherung: '+($('#pre').value||'–')+'\nGut gelungen: '+($('#r1').value||'–')+'\nNächstes Mal anders: '+($('#r2').value||'–')+'\nNächstes Lernziel: '+($('#r3').value||'–')+'\n\nAblauf: '+history.join(' → ');
+  const ok=()=>{$('#copied').textContent=' Kopiert.'},fb=()=>{const ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');ok()}catch(e){$('#copied').textContent=' Bitte markieren und kopieren.'}ta.remove()};
+  try{navigator.clipboard.writeText(t).then(ok,fb)}catch(e){fb()}};
  panel.hidden=false;$('#finish').hidden=true;
  vrbg.setAttribute('height',1.05);vrtext.setAttribute('wrap-count',56);vrtext.setAttribute('value','Ihr Besuch: '+n+' von '+items.length+'\n'+items.map(i=>(i[0]?'[x] ':'[ ] ')+i[1]).join('\n')+(notes.length?'\n'+notes.join(' '):'')+'\nNehmen Sie die Brille ab: Das Protokoll steht auch im Menü.')}
 $('#finish').onclick=finish;$('#end').onclick=finish;
+$('#varinfo').textContent='Variante '+VCODE;
+function begin(){if(started)return;started=true;$('#intro').hidden=true;if($('#pre').value)log('Annäherung notiert');say(msg.textContent)}
+$('#start').onclick=begin;
 
 // ---------- Ablauf, Bewegung, Eingabe ----------
 use.onclick=()=>{if(target)act(target.dataset.id)};
@@ -293,8 +330,8 @@ function tick(now=performance.now()){const dt=Math.min(.05,Math.max(0,(now-last)
  const p=rig.object3D.position,r=roomAt(p.x,p.z);if(r!==lastRoom){lastRoom=r;$('#room-name').textContent=r}
  if(finished||!film.hidden||!panel.hidden||dialogOpen||vrscreen.getAttribute('visible'))return;
  if(greeted){elapsed+=dt;
-  if(elapsed>100&&!done.has('sit')&&!attempted&&!warned&&!done.has('call')){warned=true;log('Frau Weber äußert den Wunsch aufzustehen');say('Aus dem Wohnzimmer: „Ich muss jetzt mal aufstehen. Mir ist immer noch so schwindelig …“')}
-  if(elapsed>170&&!done.has('sit')&&!attempted&&!done.has('call')){attempted=true;unsafe=true;log('Frau Weber beginnt allein aufzustehen');say('Frau Weber versucht ohne Unterstützung aufzustehen und setzt sich wegen Schwindel wieder hin.');person.setAttribute('animation__move','property:position;from:-1.7 0 -2.85;to:-1.7 .2 -2.7;dur:800;dir:alternate;loop:2');play(2)}}
+  if(elapsed>(VAR.mood==='unruhig'?60:100)&&!done.has('sit')&&!attempted&&!warned&&!done.has('call')){warned=true;log('Frau Weber äußert den Wunsch aufzustehen');say('Aus dem Wohnzimmer: „Ich muss jetzt mal aufstehen. Mir ist immer noch so schwindelig …“')}
+  if(elapsed>(VAR.mood==='unruhig'?120:170)&&!done.has('sit')&&!attempted&&!done.has('call')){attempted=true;unsafe=true;log('Frau Weber beginnt allein aufzustehen');say('Frau Weber versucht ohne Unterstützung aufzustehen und setzt sich wegen Schwindel wieder hin.');person.setAttribute('animation__move','property:position;from:-1.7 0 -2.85;to:-1.7 .2 -2.7;dur:800;dir:alternate;loop:2');play(2)}}
  let dx=joy.x,dz=joy.y;if(move==='f')dz=-1;if(move==='b')dz=1;if(move==='l')dx=-1;if(move==='r')dx=1;if(!dx&&!dz)return;
  (cam.getObject3D('camera')||cam.object3D).getWorldDirection(fw);fw.y=0;if(fw.lengthSq()<1e-6)fw.set(0,0,-1);fw.normalize();
  const vx=fw.x*-dz+(-fw.z)*dx,vz=fw.z*-dz+fw.x*dx,nx=p.x+vx*dt*1.65,nz=p.z+vz*dt*1.65;
@@ -307,7 +344,7 @@ let down=null;sc.addEventListener('loaded',()=>{const cv=sc.canvas;cv.addEventLi
  const us=[...room.querySelectorAll('.usable')].filter(x=>!done.has(x.dataset.id));const hits=c.intersectObjects(us.map(x=>x.object3D),true);if(hits.length){let o=hits[0].object;while(o&&!o.el?.dataset?.id)o=o.parent;if(o?.el)act(o.el.dataset.id)}})});
 addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;const m={w:'f',a:'l',s:'b',d:'r',ArrowUp:'f',ArrowDown:'b',ArrowLeft:'l',ArrowRight:'r'}[e.key];if(m)move=m;if(e.key==='e'&&target)act(target.dataset.id)});addEventListener('keyup',()=>move=null);
 // Brille
-sc.addEventListener('enter-vr',()=>{inVR=true;joy={x:0,y:0};panel.hidden=true;film.hidden=true;closeDialog();vrpanel.setAttribute('visible',true);vrtext.setAttribute('value',(greeted?'':'Gehen: Stick nach vorn drücken, Ziel wählen, loslassen. Drehen: rechter Stick zur Seite. Greifen: Greiftaste (Mittelfinger). Zeigen + Abzug: Personen und Menüs.\n')+msg.textContent)});
+sc.addEventListener('enter-vr',()=>{begin();inVR=true;joy={x:0,y:0};panel.hidden=true;film.hidden=true;closeDialog();vrpanel.setAttribute('visible',true);vrtext.setAttribute('value',(greeted?'':'Gehen: Stick nach vorn drücken, Ziel wählen, loslassen. Drehen: rechter Stick zur Seite. Greifen: Greiftaste (Mittelfinger). Zeigen + Abzug: Personen und Menüs.\n')+msg.textContent)});
 sc.addEventListener('exit-vr',()=>{inVR=false;vrpanel.setAttribute('visible',false);vrscreen.setAttribute('visible',false);closeDialog()});
 sc.addEventListener('click',e=>{if(!inVR)return;const el=e.target;if(el===vrscreen){stopFilm();return}if(el.onPick){el.onPick();return}if(dialogOpen)return;if(el.dataset&&el.dataset.id&&el.classList.contains('usable'))act(el.dataset.id)});
 room.addEventListener('raycaster-intersected',e=>{const t=e.target.tag;if(t&&inVR)t.setAttribute('visible',true)});
@@ -326,7 +363,7 @@ function grabStart(k,pinchPos){if(held[k])return;const hp=pinchPos||handPos(k,ne
  if(!best)return;if(!greeted){noGreet();return}const g=GRAB[best];held[k]={id:best,off:g.el.object3D.position.clone().sub(hp)};
  const sp={glass:typeof glassSpot!=='undefined'?glassSpot:null,button:buttonSpot,shoes:shoeSpot,rollator:rollSpot}[best];if(sp&&sp.classList.contains('usable'))hide(sp);vibrate(k,.3,40)}
 function grabEnd(k){const h=held[k];if(!h)return;held[k]=null;const g=GRAB[h.id],o=g.el.object3D.position;
- if(h.id==='glass'&&glassFull&&o.distanceTo(HEAD)<.5&&!done.has('water')){giveWater();glassFull=false;glassEl.setAttribute('material','color:#bfe2ef;opacity:.6;transparent:true');o.set(0,.84,-1.8);return}
+ if(h.id==='glass'&&glassFull&&o.distanceTo(HEAD)<.5&&!done.has('water')){giveWater();glassFull=false;o.set(0,.84,-1.8);return}
  if(h.id==='button'&&o.distanceTo(WRIST)<.4){attachButton();return}
  if(h.id==='rollator'){if(Math.hypot(o.x-ROLLSPOT.x,o.z-ROLLSPOT.z)<1.1){placeRollator()}else if(!done.has('rollatormoved')){done.add('rollatormoved');log('Rollator aus dem Schlafzimmer geholt')}return}
  if(h.id==='shoes'){o.y=0;if(!done.has('shoes')&&!(o.x>-.9&&o.x<.9&&o.z>4.9&&o.z<6.6)){removeShoes()}return}
@@ -337,14 +374,17 @@ function canStand(x,z){return x>-8.8&&x<8.8&&z>-4.8&&z<10.8&&!obstacles.some(o=>
 function clearLine(ax,az,bx,bz){const n=Math.ceil(Math.hypot(bx-ax,bz-az)/.1);for(let i=1;i<n;i++){const x=ax+(bx-ax)*i/n,z=az+(bz-az)*i/n;if(walls.some(o=>x>o[0]&&x<o[1]&&z>o[2]&&z<o[3]))return false}return true}
 function updateAim(k){const rc=hands[k].components.raycaster;if(!rc||!rc.raycaster)return null;const r=rc.raycaster.ray;if(r.direction.y>-.05)return null;const t=-r.origin.y/r.direction.y;const x=r.origin.x+r.direction.x*t,z=r.origin.z+r.direction.z*t;
  const head=new THREE.Vector3();(cam.getObject3D('camera')||cam.object3D).getWorldPosition(head);if(Math.hypot(x-head.x,z-head.z)>6)return null;const ok=canStand(x,z)&&clearLine(head.x,head.z,x,z);return{x,z,ok}}
+const dots={l:entity('a-sphere',{radius:.025,material:'shader:flat;color:#ffb347',visible:false}),r:entity('a-sphere',{radius:.025,material:'shader:flat;color:#ffb347',visible:false})};
+function nearest(hp){let best=null,bd=9;for(const id in GRAB){const g=GRAB[id];if(g.el.object3D.visible===false)continue;if(id==='button'&&done.has('alarm'))continue;if(id==='rollator'&&done.has('rollator'))continue;const o=g.el.object3D.position.clone();if(g.handle)o.y+=g.handle;const d=o.distanceTo(hp);if(d<g.r*1.5&&d<bd){bd=d;best={id,o}}}return best}
 function vrUpdate(dt){const hp=new THREE.Vector3();
+ for(const k of ['l','r']){if(held[k]){dots[k].setAttribute('visible',false);continue}handPos(k,hp);const n=nearest(hp);if(n){dots[k].object3D.position.set(n.o.x,n.o.y+.14,n.o.z);dots[k].setAttribute('visible',true)}else dots[k].setAttribute('visible',false)}
  for(const k of ['l','r']){const h=held[k];if(h){handPos(k,hp);const g=GRAB[h.id],o=g.el.object3D.position;
    if(h.id==='rollator'){o.x=hp.x+h.off.x;o.z=hp.z+h.off.z;o.y=0}else{o.copy(hp).add(h.off)}
-   if(h.id==='glass'&&!glassFull&&o.distanceTo(TAP)<.3){fillT+=dt;if(fillT>1){glassFull=true;glassEl.setAttribute('material','color:#7fc4e6;opacity:.8;transparent:true');log('Glas Wasser in der Küche gefüllt');say('Das Glas ist voll. Bringen Sie es Frau Weber – halten Sie es an ihren Mund.');vibrate(k,.5,80)}}
+   if(h.id==='glass'&&!glassFull&&o.distanceTo(TAP)<.3){fillT+=dt;if(fillT>1){glassFull=true;waterLevel(1);log('Glas Wasser in der Küche gefüllt');say('Das Glas ist voll. Bringen Sie es Frau Weber – halten Sie es an ihren Mund.');vibrate(k,.5,80)}}
    if(h.id==='towel'&&!done.has('puddle')&&Math.hypot(o.x-PUDDLE.x,o.z-PUDDLE.z)<.55&&o.y<.6){wipeT+=dt;if(wipeT>1.5){dryFloor();vibrate(k,.5,80)}}}}
  const a=aim.l?'l':aim.r?'r':null;tpTarget=a?updateAim(a):null;
  if(tpTarget){marker.object3D.position.set(tpTarget.x,.02,tpTarget.z);marker.setAttribute('material','color',tpTarget.ok?'#7fd27a':'#d25a4a');marker.setAttribute('visible',true)}else marker.setAttribute('visible',false)}
-function teleport(){if(!tpTarget||!tpTarget.ok)return;const head=new THREE.Vector3();(cam.getObject3D('camera')||cam.object3D).getWorldPosition(head);const p=rig.object3D.position;p.x+=tpTarget.x-head.x;p.z+=tpTarget.z-head.z;tpTarget=null;marker.setAttribute('visible',false)}
+function teleport(){if(!tpTarget||!tpTarget.ok)return;const fade=$('#fade');fade.setAttribute('visible',true);fade.removeAttribute('animation__f');fade.setAttribute('animation__f','property:material.opacity;from:1;to:0;dur:300;easing:easeOutQuad');setTimeout(()=>fade.setAttribute('visible',false),320);const head=new THREE.Vector3();(cam.getObject3D('camera')||cam.object3D).getWorldPosition(head);const p=rig.object3D.position;p.x+=tpTarget.x-head.x;p.z+=tpTarget.z-head.z;tpTarget=null;marker.setAttribute('visible',false)}
 for(const k of ['l','r']){const el=hands[k];
  el.addEventListener('thumbstickmoved',e=>{const x=e.detail.x,y=e.detail.y;stick[k]={x,y};
   if(y<-.6&&Math.abs(x)<.6)aim[k]=true;else if(aim[k]&&Math.hypot(x,y)<.3){aim[k]=false;teleport()}
@@ -353,7 +393,7 @@ for(const k of ['l','r']){const el=hands[k];
 for(const[k,sel]of[['l','#lhandT'],['r','#rhandT']]){const el=$(sel);if(!el)continue;el.addEventListener('pinchstarted',e=>{const p=e.detail&&e.detail.position;grabStart(k,p?new THREE.Vector3(p.x,p.y,p.z):null)});el.addEventListener('pinchended',()=>grabEnd(k))}
 
 // zum Testen
-window.__sim={vr:{grabStart,grabEnd,teleport,held,hands,GRAB,aim,get tp(){return tpTarget},set tp(v){tpTarget=v}},act,weberMenu,finish,state:()=>({greeted,carry,done:[...done],found:[...found],bpOk,drinkOk,medOk,sbarScore,hazards:[...hazards],history})};
+window.__sim={VAR,VCODE,begin,vr:{grabStart,grabEnd,teleport,held,hands,GRAB,aim,get tp(){return tpTarget},set tp(v){tpTarget=v}},act,weberMenu,finish,state:()=>({greeted,carry,done:[...done],found:[...found],bpOk,drinkOk,medOk,sbarScore,hazards:[...hazards],history})};
 AFRAME.registerComponent('sim-tick',{tick(t){tick(performance.now())}});sc.setAttribute('sim-tick','');
 }
 </script>
