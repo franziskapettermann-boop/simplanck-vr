@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>SIMPlanck Game Lab 0.12</title>
+<title>SIMPlanck Game Lab 0.13</title>
 <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
 <style>
 *{box-sizing:border-box}
@@ -61,7 +61,7 @@ video{width:min(94vw,850px);max-height:72vh}
 </a-scene></div>
 
 <div id="hud">
- <header><b>SIMPlanck</b> · GAME LAB 0.12<br><small>Mission 01 · Hausbesuch am Abend · <span id="room-name">Flur</span></small></header>
+ <header><b>SIMPlanck</b> · GAME LAB 0.13<br><small>Mission 01 · Hausbesuch am Abend · <span id="room-name">Flur</span></small></header>
  <div id="message">Sie arbeiten im ambulanten Pflegedienst und kommen zum Abendbesuch zu Frau Weber. Sie sitzt im Wohnzimmer. Begrüßen Sie sie zuerst. Danach handeln Sie selbstständig – die ganze Wohnung gehört dazu.</div>
  <div id="carry" hidden></div>
  <button id="end">Beenden</button><button id="menu">☰</button>
@@ -70,7 +70,7 @@ video{width:min(94vw,850px);max-height:72vh}
  <div id="hint">Links gehen · rechts wischen · Dinge antippen · Brille: „VR“</div>
  <div id="ki">Videos KI-generiert (Seedance, Adobe Firefly)</div>
  <button id="use" disabled>Gegenstand ansehen</button>
- <div id="panel" class="sheet" hidden><button id="close">Schließen</button><h3>Hausbesuch</h3><div id="report"><small>Hier erscheint nach „Beenden“ Ihr Protokoll.</small></div><button id="finish">Besuch beenden</button> <button onclick="location.reload()">Neustart</button><p><small>Frau Weber ist eine erfundene Person. Medikamente und Werte sind fiktiv. Die Videos sind KI-generiert (Seedance, Adobe Firefly).</small></p><p><small>3D-Modelle aus den Khronos glTF Sample Assets: Teetasse, Vase, Wasserflasche – CC0. Lampe „LightsPunctualLamp“ © 2021 DGG · Schuh „MaterialsVariantsShoe“ © 2021 Shopify – jeweils CC BY 4.0 (creativecommons.org/licenses/by/4.0). Sessel, Sofa, Couchtisch, Pflanze, Schränke, Kommode, Bett, Nachttisch, Stuhl, Uhren, Wandtelefon, Spiegel, Wasserkocher, Bilderrahmen, Medizinkasten: Poly Haven (polyhaven.com), CC0.</small></p></div>
+ <div id="panel" class="sheet" hidden><button id="close">Schließen</button><h3>Hausbesuch</h3><div id="report"><small>Hier erscheint nach „Beenden“ Ihr Protokoll.</small></div><button id="finish">Besuch beenden</button> <button onclick="location.reload()">Neustart</button><p><small>Frau Weber ist eine erfundene Person. Medikamente und Werte sind fiktiv. Die Videos sind KI-generiert (Seedance, Adobe Firefly).</small></p><p><small>3D-Modelle aus den Khronos glTF Sample Assets: Teetasse, Vase, Wasserflasche – CC0. Lampe „LightsPunctualLamp“ © 2021 DGG · Schuh „MaterialsVariantsShoe“ © 2021 Shopify – jeweils CC BY 4.0 (creativecommons.org/licenses/by/4.0). Sessel, Sofa, Couchtisch, Pflanze, Schränke, Kommode, Bett, Nachttisch, Stuhl, Uhren, Wandtelefon, Spiegel, Wasserkocher, Bilderrahmen, Medizinkasten, Herd, Esstisch, Krug, Topf, Fernseher, Brille, Pümpel sowie Boden- und Fliesentexturen: Poly Haven (polyhaven.com), CC0.</small></p></div>
  <div id="intro" class="sheet"><div>
   <small>SIMPlanck · Lernaufgabe · VR-Station</small><h2>Hausbesuch am Abend: Frau Weber</h2>
   <h3>1 · Fallkarte</h3><div class="card"><p>Frau Weber lebt allein in ihrer Wohnung. Sie hat Bluthochdruck und Diabetes und bekommt jeden Abend Besuch vom ambulanten Pflegedienst. Heute hat sie im Büro angerufen: Ihr sei „ganz komisch und schwindelig“.</p><p><b>Ihr Auftrag:</b> Sie machen den Abendbesuch. Schätzen Sie die Situation ein, sorgen Sie für Sicherheit und geben Sie Ihre Beobachtungen an die Pflegefachkraft weiter.</p></div>
@@ -113,7 +113,9 @@ function texture(kind){const c=document.createElement('canvas');c.width=c.height
  else{g.strokeStyle='#a9b0ad';g.lineWidth=3;for(let i=0;i<=256;i+=64){g.beginPath();g.moveTo(i,0);g.lineTo(i,256);g.stroke();g.beginPath();g.moveTo(0,i);g.lineTo(256,i);g.stroke()}}
  const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.colorSpace=THREE.SRGBColorSpace;return t}
 function applyMap(e,t){const set=()=>{const m=e.getObject3D('mesh');if(m){m.material.map=t;m.material.color.set('#ffffff');m.material.needsUpdate=true}};e.addEventListener('object3dset',set);set()}
-function floor(x1,x2,z1,z2,kind){const f=box((x1+x2)/2,-.07,(z1+z2)/2,x2-x1,.14,z2-z1,'#b09570');const t=texture(kind);t.repeat.set((x2-x1)*(kind==='wood'?.7:1.2),(z2-z1)*(kind==='wood'?.7:1.2));applyMap(f,t)}
+const TL=new THREE.TextureLoader();function imgTex(name,rx,ry){const t=TL.load('textures/'+name+'.jpg');t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(rx,ry);t.colorSpace=THREE.SRGBColorSpace;return t}
+function floor(x1,x2,z1,z2,kind,sz=1.6){const f=box((x1+x2)/2,-.07,(z1+z2)/2,x2-x1,.14,z2-z1,'#b09570');let t;if(kind==='wood'||kind==='tile'){t=texture(kind);t.repeat.set((x2-x1)*(kind==='wood'?.7:1.2),(z2-z1)*(kind==='wood'?.7:1.2))}else{f.setAttribute('material','src:url(textures/'+kind+'.jpg);repeat:'+((x2-x1)/sz).toFixed(2)+' '+((z2-z1)/sz).toFixed(2)+';color:#ffffff;roughness:.8');return}applyMap(f,t)}
+function tiles(x,y,z,w,h,ry){return entity('a-plane',{position:x+' '+y+' '+z,rotation:'0 '+ry+' 0',width:w,height:h,material:'src:url(textures/long_white_tiles.jpg);repeat:'+(w/1.2).toFixed(2)+' '+(h/1.2).toFixed(2)+';color:#ffffff;roughness:.5'})}
 const H=2.6,walls=[];
 function wall(x1,z1,x2,z2,gaps=[],col='#e4dccb'){const alongX=z1===z2,a=alongX?Math.min(x1,x2):Math.min(z1,z2),b=alongX?Math.max(x1,x2):Math.max(z1,z2);let cur=a;const segs=[];for(const g of gaps.slice().sort((p,q)=>p[0]-q[0])){segs.push([cur,g[0]]);cur=g[1];
   const m=(g[0]+g[1])/2,len=g[1]-g[0];if(alongX)box(m,2.35,z1,len,.5,.15,col);else box(x1,2.35,m,.15,.5,len,col)}segs.push([cur,b]);
@@ -124,7 +126,8 @@ function rollatorModel(parent){for(const x of [-.3,.3]){box(x,.52,.3,.06,1,.06,'
 
 // ---------- Grundriss ----------
 // Wohnzimmer x -5..5 z -5..5 · Schlafzimmer x -9..-5 z -1..5 · Küche x 5..9 z 0..5 · Flur x -9..9 z 5..8 · Bad x -2..2 z 8..11
-floor(-5,5,-5,5,'wood');floor(-9,-5,-1,5,'wood');floor(-9,9,5,8,'wood');floor(5,9,0,5,'tile');floor(-2,2,8,11,'tile');
+floor(-5,5,-5,5,'herringbone_parquet',1.8);floor(-9,-5,-1,5,'laminate_floor_02',1.8);floor(-9,9,5,8,'laminate_floor_02',1.8);floor(5,9,0,5,'floor_tiles_06',1.2);floor(-2,2,8,11,'floor_tiles_06',1.2);
+tiles(-1.92,.75,9.5,3,1.5,90);tiles(1.92,.75,9.5,3,1.5,-90);tiles(0,.75,10.92,3.84,1.5,180);tiles(-1.27,.75,8.08,1.3,1.5,0);tiles(1.27,.75,8.08,1.3,1.5,0);
 box(0,H,3,18.2,.08,16.2,'#f4f0e5');
 wall(-5,-5,5,-5);wall(-5,-5,-5,5);wall(5,-5,5,5);
 wall(-9,5,9,5,[[-7.6,-6.4],[-.6,.6],[6.4,7.6]]);
@@ -167,7 +170,7 @@ const glassEl=cyl(0,.84,-1.8,.07,.2,'#cfe6ee');glassEl.setAttribute('material','
 box(.65,.82,-1.8,.3,.18,.22,'#e8e8e5');box(.65,.92,-1.68,.19,.025,.11,'#394c49');spot('bp','Blutdruckgerät',.65,.85,-1.8,.4,.35,.35);
 const rug=box(-1.6,.025,-.3,2.3,.05,1.8,'#9a5144'),curled=box(-.5,.08,-.3,.15,.12,1.8,'#b76a50'),rugSpot=spot('rug','Teppich',-1.6,.12,-.3,2.3,.18,1.8);
 model('ph_Sofa_01',-4.35,0,1,90,1.35);model('ph_wall_clock',-4.92,1.95,-1.6,90,1.2);block(-4.6,-3.05,-.5,2.5);
-model('ph_hanging_picture_frame_01',2.8,1.8,-4.9,180,1.4);model('ph_vintage_cabinet_01',4.6,0,-1.6,-90,1);block(4.2,5,-2.65,-.55);
+model('ph_Television_01',3.35,.9,-4.45,0,1);model('ph_round_spectacles',-.25,.74,-1.55,200,1);model('ph_plunger',.95,0,10.75,0,1);model('ph_hanging_picture_frame_01',2.8,1.8,-4.9,180,1.4);model('ph_vintage_cabinet_01',4.6,0,-1.6,-90,1);block(4.2,5,-2.65,-.55);
 model('ph_potted_plant_01',-3.9,0,-3.8,30,1.1);block(-4.2,-3.6,-4.1,-3.5);
 model('LightsPunctualLamp',-.4,0,-4.1,180,1);
 box(2.8,.45,-4.4,2.1,.9,.65,'#79583d');model('GlassVaseFlowers',2.2,.9,-4.4,0,1.6);for(let i=0;i<3;i++){box(2.1+i*.7,.47,-4.05,.65,.7,.05,'#98734e');box(2.1+i*.7,.65,-4.01,.13,.035,.04,'#c6ae7a')}block(1.7,3.9,-4.75,-4.05);
@@ -182,10 +185,10 @@ box(8.93,1.05,6.5,.06,2.1,1.1,'#6b4f37');sphere(8.88,1.05,6.1,.04,'#c6ae7a');spo
 for(let i=0;i<4;i++)sphere(-8.85,1.75,5.8+i*.35,.04,'#9a9a9a');box(-8.82,1.35,6.3,.12,.8,.5,'#4d5d6b');
 
 // ---------- Küche ----------
-box(8.6,.45,2.1,.8,.9,3,'#c6c0ae');box(8.6,.92,2.1,.84,.05,3.04,'#626f73');block(8.2,9,.6,3.6);
+box(8.6,.45,2.4,.8,.9,2.4,'#c6c0ae');box(8.6,.92,2.4,.84,.05,2.44,'#626f73');model('ph_electric_stove',8.62,0,.78,-90,1);model('ph_pot_enamel_01',8.6,.86,.75,0,1);model('ph_jug_01',8.55,.945,2.9,-90,1);block(8.2,9,.6,3.6);
 box(8.6,.9,1.5,.5,.06,.4,'#9aa3a6');cyl(8.82,1.08,1.5,.02,.3,'#b9c0c3');spot('tap','Wasserhahn',8.6,1.05,1.5,.6,.45,.55);
 box(8.55,.9,4.3,.8,1.8,.8,'#e9e9e4');box(8.13,1.2,4.0,.03,.5,.04,'#888');block(8.15,8.95,3.9,4.7);spot('fridge','Kühlschrank',8.3,.9,4.3,.5,1.8,.9);
-box(6.3,.72,1.6,1,.06,.8,'#a7835c');for(const x of [5.88,6.72])for(const z of [1.28,1.92])box(x,.36,z,.05,.72,.05,'#a7835c');block(5.75,6.85,1.15,2.05);
+model('ph_dining_table',6.3,0,1.6,0,[.5,.86,.6]);block(5.75,6.85,1.15,2.05);
 box(6.3,.79,1.6,.42,.06,.16,'#4b88c9');for(let i=0;i<4;i++)box(6.14+i*.105,.83,1.6,.09,.02,.13,'#cfe4f7');spot('dosette','Tablettendosette',6.3,.82,1.6,.55,.25,.35);
 model('ph_painted_wooden_chair_01',6.3,0,2.45,180,1);model('ph_medical_box',6.75,.75,1.75,-20,.6);model('ph_vintage_electric_kettle',8.6,.945,3.1,-90,1);block(5.9,6.7,2.15,2.75);
 
