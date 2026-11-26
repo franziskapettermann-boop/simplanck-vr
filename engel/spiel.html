@@ -336,7 +336,7 @@ async function szene2() {
   const offen = await buildRoom('treppenhausoffen');
   if (!offen.door) offen.door = addWindow(offen, TUER_FENSTER);
   offen.door.play();
-  await goRoom('treppenhausoffen', TUER_FENSTER.u, STAND, -0.05);
+  await goRoom('treppenhausoffen', TUER_FENSTER.u, STAND, -0.22);
   offen.door.play();
   await sleep(1200);
   if (!opened) await say('engel', byMood({ gut: 'Ja? Wer sind Sie?', müde: 'Ja … wer ist da?', misstrauisch: 'Ja? … Wer sind Sie? Ich kauf nichts.' }));
