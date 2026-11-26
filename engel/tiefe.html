@@ -7,11 +7,11 @@
 <script type="module">
 // Aufruf: tiefe.html?bild=wohnzimmer360.jpg&modell=base  → lädt bild_tiefe.png herunter
 import { pipeline } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3';
-const q = new URLSearchParams(location.search), bild = q.get('bild') || 'wohnzimmer360.jpg', groesse = q.get('modell') || 'base';
+const q = new URLSearchParams(location.search), bild = q.get('bild') || 'wohnzimmer360.jpg', groesse = q.get('modell') || 'small';
 const st = document.getElementById('st'); window.__state = 'loading';
 try {
   const img = new Image(); img.src = bild; await img.decode(); document.body.appendChild(img);
-  const est = await pipeline('depth-estimation', 'onnx-community/depth-anything-v2-' + groesse, { dtype: 'fp16', device: navigator.gpu ? 'webgpu' : 'wasm',
+  const est = await pipeline('depth-estimation', 'onnx-community/depth-anything-v2-' + groesse, { dtype: q.get('dtype') || 'fp32', device: q.get('gpu') === '1' ? 'webgpu' : 'wasm',
     progress_callback: p => { if (p.status === 'progress' && p.file?.endsWith('.onnx')) st.textContent = 'Modell laden ' + Math.round(p.progress) + ' %'; } });
   st.textContent = 'Berechne Tiefe …';
   // Panorama: links und rechts ein Stück anhängen, damit die Naht stimmig wird

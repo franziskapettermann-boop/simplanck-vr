@@ -15,7 +15,7 @@
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
 </head>
 <body>
-<div id="info">Raumtest Frau Engel 360° · Bild KI-generiert (ChatGPT), Tiefe KI-geschätzt · Wischen = umsehen</div>
+<div id="info">Raumtest Frau Engel 360° · Bilder KI-generiert (ChatGPT), Tiefe KI-geschätzt · Wischen = umsehen</div>
 <div id="ui">
   <button data-m="-1,0,0">◀ links</button>
   <button data-m="1,0,0">rechts ▶</button>
@@ -23,6 +23,11 @@
   <button data-m="0,0,1">▼ zurück</button>
   <button id="duck">Bücken</button>
   <button id="sway">Bewegung zeigen</button>
+  <span style="width:100%"></span>
+  <button data-r="treppenhaus360.jpg">Treppenhaus</button>
+  <button data-r="flur360.jpg">Flur</button>
+  <button data-r="wohnzimmer360.jpg">Wohnzimmer</button>
+  <button data-r="bad360.jpg">Bad</button>
 </div>
 <script type="module">
 import * as THREE from 'three';
@@ -118,6 +123,7 @@ const step = (x, z) => { off.x = Math.max(-0.5, Math.min(0.5, off.x + x * 0.1));
 document.querySelectorAll('[data-m]').forEach(b => b.onclick = () => { const [x, , z] = b.dataset.m.split(',').map(Number); step(x, z); });
 addEventListener('keydown', e => ({ ArrowLeft: () => step(-1, 0), ArrowRight: () => step(1, 0), ArrowUp: () => step(0, -1), ArrowDown: () => step(0, 1) }[e.key]?.()));
 document.getElementById('duck').onclick = e => { duck = !duck; e.target.classList.toggle('on', duck); };
+document.querySelectorAll('[data-r]').forEach(b => { b.classList.toggle('on', b.dataset.r === IMG); b.onclick = () => location.search = '?bild=' + b.dataset.r; });
 document.getElementById('sway').onclick = e => { sway = !sway; e.target.classList.toggle('on', sway); };
 
 addEventListener('resize', () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); });
