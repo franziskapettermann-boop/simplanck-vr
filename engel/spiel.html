@@ -118,7 +118,7 @@ async function addEngel(room) {
 }
 
 // Videofenster: ein Ausschnitt des Panoramas wird lebendig (Video aus genau diesem Blickwinkel)
-const windows = [];
+const windows = []; window.__windows = windows;
 function addWindow(room, { u, v, vfov, aspect, src, dist }) {
   const vid = document.createElement('video'); vid.src = src; vid.loop = true; vid.muted = true; vid.playsInline = true; vid.crossOrigin = 'anonymous'; vid.preload = 'auto';
   const vt = new THREE.VideoTexture(vid); vt.colorSpace = THREE.NoColorSpace;
