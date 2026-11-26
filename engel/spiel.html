@@ -124,11 +124,11 @@ function addWindow(room, { u, v, vfov, aspect, src, dist }) {
   const vt = new THREE.VideoTexture(vid); vt.colorSpace = THREE.SRGBColorSpace;
   const D = dist || room.point(u, v, 0).length() * 0.97;
   const th = Math.tan(vfov * Math.PI / 360), h = 2 * D * th, w = h * aspect;
-  const mat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, uniforms: { map: { value: vt }, o: { value: 1 } },
+  const mat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, depthTest: false, uniforms: { map: { value: vt }, o: { value: 1 } },
     vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
     fragmentShader: 'uniform sampler2D map; uniform float o; varying vec2 vUv; void main(){ vec4 c = texture2D(map, vUv); float e = min(min(vUv.x, 1.0 - vUv.x), min(vUv.y, 1.0 - vUv.y)); gl_FragColor = vec4(c.rgb, o * smoothstep(0.0, 0.06, e)); \n#include <colorspace_fragment>\n}' });
   const plane = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat);
-  plane.position.copy(dirOf(u, v).multiplyScalar(D)); plane.lookAt(0, 0, 0); plane.renderOrder = 3;
+  plane.position.copy(dirOf(u, v).multiplyScalar(D)); plane.lookAt(0, 0, 0); plane.renderOrder = 5;
   room.group.add(plane);
   const win = { vid, plane, play: () => vid.play().catch(() => {}) }; windows.push(win); return win;
 }
@@ -248,11 +248,12 @@ for (let i = 0; i < 2; i++) {
   ctl.addEventListener('select', () => {
     const m = new THREE.Matrix4().extractRotation(ctl.matrixWorld);
     ray.ray.origin.setFromMatrixPosition(ctl.matrixWorld); ray.ray.direction.set(0, 0, -1).applyMatrix4(m);
+    windows.forEach(w => w.play()); engelVideo?.play().catch(() => {});
     const hit = ray.intersectObject(panel.mesh)[0]; if (!hit) return;
     const py = (1 - hit.uv.y) * 640; const row = panel.rows.find(r => py >= r[0] && py <= r[1]); if (row) pick(row[2]);
   });
 }
-renderer.xr.addEventListener('sessionstart', () => { setTimeout(placeRoom, 300); panel.mesh.visible = true; panel.place(); engelVideo?.play().catch(() => {}); });
+renderer.xr.addEventListener('sessionstart', () => { setTimeout(placeRoom, 300); panel.mesh.visible = true; panel.place(); engelVideo?.play().catch(() => {}); windows.forEach(w => w.play()); });
 renderer.xr.addEventListener('sessionend', () => { panel.mesh.visible = false; });
 
 // ---------- Kamera und Raumwechsel ----------
@@ -336,6 +337,7 @@ async function szene2() {
   if (!offen.door) offen.door = addWindow(offen, TUER_FENSTER);
   offen.door.play();
   await goRoom('treppenhausoffen', TUER_FENSTER.u, STAND, -0.05);
+  offen.door.play();
   await sleep(1200);
   if (!opened) await say('engel', byMood({ gut: 'Ja? Wer sind Sie?', müde: 'Ja … wer ist da?', misstrauisch: 'Ja? … Wer sind Sie? Ich kauf nichts.' }));
   await ownWords('Was sagst du zur Begrüßung? Danach wählst du, was am nächsten dran ist.');
