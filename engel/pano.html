@@ -120,7 +120,7 @@ if (IMG.startsWith('wohnzimmer') && q.get('engel') !== '0') {
   const v = document.createElement('video');
   v.src = 'figur/engel_sessel_loop.mp4'; v.loop = true; v.muted = true; v.playsInline = true; v.crossOrigin = 'anonymous';
   engelVideo = v;
-  const vt = new THREE.VideoTexture(v); vt.colorSpace = THREE.SRGBColorSpace;
+  const vt = new THREE.VideoTexture(v); vt.colorSpace = THREE.NoColorSpace;
   // Ausschnitt im 16:9-Video: Person und Sessel
   const U0 = +(q.get('u0') || 0.34), U1 = +(q.get('u1') || 0.60), V0 = +(q.get('v0') || 0.28), V1 = +(q.get('v1') || 0.97);
   const mat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false,
@@ -132,9 +132,8 @@ if (IMG.startsWith('wohnzimmer') && q.get('engel') !== '0') {
         vec2 p = (vUv - vec2(0.5, 0.5)) * 2.0; float e = length(vec2(p.x, p.y * 0.9));
         float a = 1.0 - smoothstep(0.78, 1.0, e); a *= smoothstep(0.0, 0.06, vUv.y);
         gl_FragColor = vec4(c.rgb, a);
-#include <colorspace_fragment>
       }` });
-  const h = (top.y - foot.y) * +(q.get('hs') || 1.35), w = h * ((U1 - U0) * 1920) / ((V1 - V0) * 1080);
+  const h = (top.y - foot.y) * +(q.get('hs') || 1.05), w = h * ((U1 - U0) * 1920) / ((V1 - V0) * 1080);
   const plane = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat);
   const base = foot.clone().multiplyScalar(+(q.get('dz') || 0.92));
   plane.position.set(base.x, foot.y + h / 2 - 0.05, base.z);
