@@ -121,12 +121,12 @@ async function addEngel(room) {
 const windows = [];
 function addWindow(room, { u, v, vfov, aspect, src, dist }) {
   const vid = document.createElement('video'); vid.src = src; vid.loop = true; vid.muted = true; vid.playsInline = true; vid.crossOrigin = 'anonymous'; vid.preload = 'auto';
-  const vt = new THREE.VideoTexture(vid); vt.colorSpace = THREE.SRGBColorSpace;
+  const vt = new THREE.VideoTexture(vid); vt.colorSpace = THREE.NoColorSpace;
   const D = dist || room.point(u, v, 0).length() * 0.97;
   const th = Math.tan(vfov * Math.PI / 360), h = 2 * D * th, w = h * aspect;
   const mat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, depthTest: false, uniforms: { map: { value: vt }, o: { value: 1 } },
     vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
-    fragmentShader: 'uniform sampler2D map; uniform float o; varying vec2 vUv; void main(){ vec4 c = texture2D(map, vUv); float e = min(min(vUv.x, 1.0 - vUv.x), min(vUv.y, 1.0 - vUv.y)); gl_FragColor = vec4(c.rgb, o * smoothstep(0.0, 0.06, e)); \n#include <colorspace_fragment>\n}' });
+    fragmentShader: 'uniform sampler2D map; uniform float o; varying vec2 vUv; void main(){ vec4 c = texture2D(map, vUv); float e = min(min(vUv.x, 1.0 - vUv.x), min(vUv.y, 1.0 - vUv.y)); gl_FragColor = vec4(c.rgb, o * smoothstep(0.0, 0.06, e)); }' });
   const plane = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat);
   plane.position.copy(dirOf(u, v).multiplyScalar(D)); plane.lookAt(0, 0, 0); plane.renderOrder = 5;
   room.group.add(plane);
