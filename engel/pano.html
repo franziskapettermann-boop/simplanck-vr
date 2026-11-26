@@ -145,7 +145,7 @@ if (IMG.startsWith('wohnzimmer') && q.get('engel') !== '0') {
 }
 
 // Umsehen per Wischen, Kopf bewegen per Tasten
-let yaw = 0, pitch = 0, drag = null, off = new THREE.Vector3(), duck = false, sway = false;
+let yaw = +(new URLSearchParams(location.search).get('yaw') || 0), pitch = +(new URLSearchParams(location.search).get('pitch') || 0), drag = null, off = new THREE.Vector3(), duck = false, sway = false;
 addEventListener('pointerdown', e => { if (e.target.tagName !== 'BUTTON') drag = [e.clientX, e.clientY]; });
 addEventListener('pointerup', () => drag = null);
 addEventListener('pointermove', e => {
