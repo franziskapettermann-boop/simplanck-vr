@@ -289,12 +289,12 @@ function labelTex(text) {
 function setMarkers(room, list) {
   markers.forEach(m => m.obj.parent?.remove(m.obj)); markers = [];
   for (const m of list) {
-    const p = room.point(m.u, m.v, 0).multiplyScalar(m.near || 0.9), g = new THREE.Group(); g.position.copy(p); g.position.y += 0.02;
-    const ring = new THREE.Mesh(new THREE.RingGeometry(0.16, 0.24, 48), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.9, depthTest: false, side: THREE.DoubleSide }));
+    const p = room.point(m.u, m.v, 0).multiplyScalar(m.near || 0.97), g = new THREE.Group(); g.position.copy(p); g.position.y += 0.02;
+    const ring = new THREE.Mesh(new THREE.RingGeometry(0.09, 0.13, 48), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.9, depthTest: false, side: THREE.DoubleSide }));
     ring.rotation.x = -Math.PI / 2; ring.renderOrder = 8;
-    const dot = new THREE.Mesh(new THREE.CircleGeometry(0.08, 32), ring.material.clone()); dot.rotation.x = -Math.PI / 2; dot.renderOrder = 8;
-    const lab = new THREE.Sprite(new THREE.SpriteMaterial({ map: labelTex(m.label), depthTest: false, transparent: true })); lab.scale.set(0.8, 0.15, 1); lab.position.y = 0.4; lab.renderOrder = 9;
-    const hit = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 0.9, 16), new THREE.MeshBasicMaterial({ visible: false })); hit.position.y = 0.3;
+    const dot = new THREE.Mesh(new THREE.CircleGeometry(0.045, 32), ring.material.clone()); dot.rotation.x = -Math.PI / 2; dot.renderOrder = 8;
+    const lab = new THREE.Sprite(new THREE.SpriteMaterial({ map: labelTex(m.label), depthTest: false, transparent: true })); lab.scale.set(0.42, 0.08, 1); lab.position.y = 0.28; lab.renderOrder = 9;
+    const hit = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 0.7, 16), new THREE.MeshBasicMaterial({ visible: false })); hit.position.y = 0.3;
     g.add(ring, dot, lab, hit); room.group.add(g);
     markers.push({ ...m, obj: g, ring, hit });
   }
