@@ -25,7 +25,7 @@
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
 </head>
 <body>
-<div id="top"><span>Erster Besuch bei Frau Engel · Testabschnitt Szene 0–5</span><span>Bilder, Video und Stimmen KI-generiert</span></div>
+<div id="top"><span>Erster Besuch bei Frau Engel · Testabschnitt Szene 0–7</span><span>Bilder, Video und Stimmen KI-generiert</span></div>
 <div id="start"><div>
   <h1>Erster Besuch bei Frau Engel</h1>
   Ambulanter Pflegedienst, Donnerstag, 9:12 Uhr. Du bist mit deiner Praxisanleiterin Jana unterwegs. Heute besuchst du zum ersten Mal Frau Hilde Engel, 84 Jahre.<br><br>
@@ -571,14 +571,76 @@ async function szene6() {
   note('Frau Engel ist im Bad verschwunden. Du gehst hinterher.');
   setMarkers(current, [{ u: 0.372, v: 0.80, label: 'Ins Bad', go: 'bad' }]);
   await waitMarker();
-  await goRoom('bad', 0.5, STAND); hotspots = [];
-  note('Im Bad. Hier geht es bald weiter: Waschen, Intimsphäre, Notruf.');
-  await sleep(2500);
+}
+const BAD_DINGE = [
+  { id: 'fenster', u: 0.33, v: 0.30, r: 9, name: 'Gekipptes Fenster, es zieht' },
+  { id: 'notruf', u: 0.66, v: 0.61, r: 7, name: 'Notrufarmband auf der Waschmaschine' },
+  { id: 'hocker', u: 0.43, v: 0.78, r: 8, name: 'Hocker zum Hinsetzen' },
+  { id: 'matte', u: 0.42, v: 0.92, r: 10, name: 'Badematte ohne Rutschschutz' },
+  { id: 'badtuer', u: 0.80, v: 0.50, r: 9, name: 'Offene Badezimmertür' }
+];
+async function szene7() {
+  // Im Bad: Intimsphäre, Kälte, Selbstständigkeit, Notruf
+  const bad = await buildRoom('bad');
+  if (!bad.engel) bad.engel = await addFigur(bad, { u: qn('bu', 0.47), v: qn('bv', 0.86), groesse: qn('bg', 2.0), src: 'figur/engel_tuer_alpha.mp4' });
+  await goRoom('bad', 0.5, STAND, 0.12); hotspots = BAD_DINGE; bad.engel.play();
+  const strasse = playTon('sfx_strasse', 0.35, true);
+  let fensterZu = false, tuerZu = false, warm = false;
+  note('Frau Engel steht am Waschbecken. Durchs gekippte Fenster zieht es, draußen rauscht der Verkehr.');
+  await sleep(6000);
+  await say('engel', 'Muss die Tür offen sein?', 'engel_tuer_offen');
+  const t = await choose([
+    { label: 'Die Tür schließen: „Nein, ich mach sie zu.“', k: 'zu' },
+    { label: '„Nur kurz, dann geht’s schneller.“', k: 'offen' },
+    { label: 'Nichts sagen und anfangen', k: 'nix' }]);
+  if (t.k === 'zu') { tuerZu = true; playTon('sfx_badtuer', 0.7); log.push('Bad: Tür geschlossen, Intimsphäre geschützt'); }
+  else { await say('engel', 'Ich steh doch da nicht nackig rum!', 'engel_nackig'); mood = 'misstrauisch'; log.push('Bad: Tür offen gelassen, obwohl Frau Engel gefragt hat'); }
+  await ownWords('Bevor es losgeht: Was bereitest du vor? Sag es laut.');
+  const vor = [
+    { label: 'Das Fenster schließen', k: 'fenster', needs: 'fenster' },
+    { label: 'Den Hocker vors Waschbecken stellen, damit sie sitzen kann', k: 'hocker', needs: 'hocker' },
+    { label: 'Handtücher auf die Heizung legen, damit sie warm sind', k: 'warm' },
+    { label: 'Die rutschige Badematte zur Seite legen', k: 'matte', needs: 'matte' },
+    { label: 'Fertig vorbereitet, jetzt anfangen', k: 'los' }];
+  while (true) {
+    const c = await choose(vor.filter(o => !o.done));
+    if (c.k === 'los') break;
+    c.done = true; log.push('Bad vorbereitet: ' + c.label);
+    if (c.k === 'fenster') { fensterZu = true; strasse.volume = 0.06; note('Das Fenster ist zu. Es wird ruhiger.'); }
+    if (c.k === 'hocker') note('Frau Engel setzt sich. Sie wirkt erleichtert.');
+    if (c.k === 'warm') { warm = true; note('Die Handtücher liegen auf der Heizung.'); }
+    if (c.k === 'matte') note('Die Matte liegt zur Seite. Der Boden ist trocken.');
+  }
+  if (t.k === 'zu' && mood !== 'misstrauisch') await say('engel', 'Na gut …', 'engel_naguat');
+  const w = await choose([
+    { label: 'Ihr den Waschlappen reichen, sie wäscht das Gesicht selbst. Danach Rücken und Füße übernehmen', k: 'selbst' },
+    { label: 'Alles selbst waschen, dann geht es schneller', k: 'alles' }]);
+  const wasser = playTon('sfx_bad_wasser', 0.5, true);
+  if (w.k === 'selbst') { note('Frau Engel wäscht sich das Gesicht selbst, langsam und gründlich. Danach wäschst du ihr Rücken und Füße.'); log.push('Waschen: Gesicht selbst gelassen, Rücken und Füße unterstützt'); }
+  else { note('Du nimmst ihr den Waschlappen aus der Hand. Frau Engel lässt es geschehen und schaut weg.'); mood = 'misstrauisch'; log.push('Waschen: alles übernommen, obwohl sie das Gesicht selbst waschen wollte'); }
+  await sleep(7000); wasser.pause();
+  if (!fensterZu || !warm) await say('engel', 'Na also. Geht doch. … Huch, mir ist kalt.', 'engel_kalt');
+  else note(w.k === 'selbst' ? 'Frau Engel lächelt. „Geht doch.“' : 'Frau Engel sagt nichts mehr.');
+  // Notruf
+  note(seen.has('notruf') ? 'Das Notrufarmband liegt noch auf der Waschmaschine.' : 'Jana fragt beim Abschied: „Und das Notrufarmband?“ Es liegt auf der Waschmaschine.');
+  await sleep(3000);
+  await say('engel', 'Das Ding stört beim Waschen. Und eigentlich auch sonst.', 'engel_notruf_stoert');
+  await ownWords('Was sagst du zum Notrufarmband?');
+  const n = await choose([
+    { label: 'Erklären, wofür es da ist, und fragen, ob du es ihr wieder anlegen darfst', k: 'fragen' },
+    { label: 'Es ihr einfach wieder ums Handgelenk machen', k: 'einfach' },
+    { label: 'Liegen lassen, es ist ihre Entscheidung', k: 'liegen' }]);
+  strasse.pause();
+  if (n.k === 'fragen') { await say('engel', 'Na, wenn Sie meinen … Machen Sie’s mir halt dran. … Kommen Sie morgen wieder?', 'engel_notruf_ok'); log.push('Notruf: erklärt, gefragt und mit Einverständnis angelegt');
+    await say('engel', 'Das ist gut, dann vergess ich’s nicht. … Na, so schlimm war’s ja gar nicht mit Ihnen.', 'engel_abschied'); }
+  if (n.k === 'einfach') { await say('engel', 'Jetzt fangen Sie auch noch an wie meine Tochter.', 'engel_wie_tochter'); log.push('Notruf: ohne zu fragen angelegt'); }
+  if (n.k === 'liegen') { note('Das Armband bleibt auf der Waschmaschine. Wenn Frau Engel heute stürzt, kann sie keine Hilfe rufen.'); log.push('Notruf: liegen gelassen, Sturzrisiko ohne Hilferuf'); await sleep(3500); }
+  await sleep(800);
 }
 async function ende() {
   hotspots = [];
   const flur = FLUR_DINGE.map(d => `${seen.has(d.id) ? '✔' : '✗'} ${d.name}`).join('<br>');
-  sub(`<b>Ende des Testabschnitts.</b> Weiter geht es später mit dem Waschen im Bad.<br><br>Im Flur hast du ${FLUR_DINGE.filter(d => seen.has(d.id)).length} von ${FLUR_DINGE.length} Dingen länger angesehen:<br>${flur}${seen.has('bad_ungefragt') ? '<br><br>Du hast allein ins Bad geschaut, ohne Frau Engel zu fragen. Es ist ihre Wohnung: Wie hätte sie das wohl empfunden?' : ''}${log.length ? '<br><br><b>Deine Entscheidungen:</b><br>' + log.join('<br>') : ''}<br><br>Tagesform von Frau Engel am Ende: ${mood}`);
+  sub(`<b>Ende des Testabschnitts.</b> Weiter geht es später mit der Nachbesprechung im Auto.<br><br>Im Flur hast du ${FLUR_DINGE.filter(d => seen.has(d.id)).length} von ${FLUR_DINGE.length} Dingen länger angesehen:<br>${flur}<br><br>Im Bad: ${BAD_DINGE.filter(d => seen.has(d.id)).length} von ${BAD_DINGE.length}:<br>${BAD_DINGE.map(d => `${seen.has(d.id) ? '✔' : '✗'} ${d.name}`).join('<br>')}${seen.has('bad_ungefragt') ? '<br><br>Du hast allein ins Bad geschaut, ohne Frau Engel zu fragen. Es ist ihre Wohnung: Wie hätte sie das wohl empfunden?' : ''}${log.filter(x => typeof x === 'string').length ? '<br><br><b>Deine Entscheidungen:</b><br>' + log.filter(x => typeof x === 'string').join('<br>') : ''}<br><br>Tagesform von Frau Engel am Ende: ${mood}`);
   if (!renderer.xr.isPresenting && recordings.length) {
     const box = document.createElement('div'); box.style.cssText = 'max-width:900px;font-size:15px;line-height:1.5;text-align:left';
     box.innerHTML = '<b>Deine eigenen Worte:</b>';
@@ -592,7 +654,7 @@ async function ende() {
 $('startBtn').onclick = async () => {
   $('start').remove(); actx = new AudioContext();
   const ab = +(new URLSearchParams(location.search).get('szene') || 0);
-  const ablauf = [szene0, szene1, szene2, szene3, szene4, szene5, szene5b, szene6, ende];
+  const ablauf = [szene0, szene1, szene2, szene3, szene4, szene5, szene5b, szene6, szene7, ende];
   try { for (const f of ablauf.slice(ab)) await f(); }
   catch (e) { sub('Fehler: ' + e.message); console.error(e); }
 };
