@@ -1,24 +1,33 @@
 <!DOCTYPE html>
 <html lang="de"><head><meta charset="utf-8"><title>Tiefenkarte berechnen</title>
-<style>body{font-family:system-ui;background:#111;color:#eee;padding:20px}img,canvas{max-width:45vw;margin:6px}</style></head>
+<style>body{font-family:system-ui;background:#111;color:#eee;padding:20px}img,canvas{max-width:90vw;margin:6px 0;display:block}</style></head>
 <body>
-<h3>Tiefenkarte (Werkzeug, läuft nur im Browser)</h3>
-<p id="st">Lade Modell …</p>
-<img id="src" src="wohnzimmer.jpg"><span id="out"></span>
+<h3>Werkzeug: Tiefenkarte vorab berechnen</h3>
+<p id="st">Starte …</p>
 <script type="module">
+// Aufruf: tiefe.html?bild=wohnzimmer360.jpg&modell=base  → lädt bild_tiefe.png herunter
 import { pipeline } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3';
-const st = document.getElementById('st');
-window.__state = 'loading';
+const q = new URLSearchParams(location.search), bild = q.get('bild') || 'wohnzimmer360.jpg', groesse = q.get('modell') || 'base';
+const st = document.getElementById('st'); window.__state = 'loading';
 try {
-  const est = await pipeline('depth-estimation', 'onnx-community/depth-anything-v2-small', { dtype: 'fp32', progress_callback: p => { if (p.progress) st.textContent = 'Lade Modell … ' + Math.round(p.progress) + ' %'; } });
+  const img = new Image(); img.src = bild; await img.decode(); document.body.appendChild(img);
+  const est = await pipeline('depth-estimation', 'onnx-community/depth-anything-v2-' + groesse, { dtype: 'fp16', device: navigator.gpu ? 'webgpu' : 'wasm',
+    progress_callback: p => { if (p.status === 'progress' && p.file?.endsWith('.onnx')) st.textContent = 'Modell laden ' + Math.round(p.progress) + ' %'; } });
   st.textContent = 'Berechne Tiefe …';
-  const res = await est(new URL(document.getElementById('src').src, location.href).href);
-  const c = res.depth.toCanvas();
-  document.getElementById('out').appendChild(c);
-  window.__depth = c.toDataURL('image/png');
-  window.__size = [c.width, c.height];
-  window.__state = 'done';
-  st.textContent = 'Fertig: ' + c.width + '×' + c.height;
+  // Panorama: links und rechts ein Stück anhängen, damit die Naht stimmig wird
+  const pad = Math.round(img.naturalWidth * 0.125), W = img.naturalWidth, H = img.naturalHeight;
+  const c = document.createElement('canvas'); c.width = W + 2 * pad; c.height = H;
+  const x = c.getContext('2d'); x.drawImage(img, pad, 0); x.drawImage(img, W - pad, 0, pad, H, 0, 0, pad, H); x.drawImage(img, 0, 0, pad, H, W + pad, 0, pad, H);
+  const d = (await est(c.toDataURL('image/png'))).depth;
+  const o = document.createElement('canvas'); o.width = W; o.height = H; const ox = o.getContext('2d'), im = ox.createImageData(W, H);
+  const sx = d.width / c.width;
+  for (let yy = 0; yy < H; yy++) for (let xx = 0; xx < W; xx++) {
+    const v = d.data[(Math.round(yy * d.height / H) * d.width + Math.round((xx + pad) * sx)) * d.channels];
+    const k = (yy * W + xx) * 4; im.data[k] = im.data[k + 1] = im.data[k + 2] = v; im.data[k + 3] = 255;
+  }
+  ox.putImageData(im, 0, 0); document.body.appendChild(o);
+  const a = document.createElement('a'); a.href = o.toDataURL('image/png'); a.download = bild.replace(/\.\w+$/, '') + '_tiefe.png'; a.click();
+  window.__state = 'done'; st.textContent = 'Fertig, heruntergeladen: ' + a.download;
 } catch (e) { window.__state = 'error: ' + e.message; st.textContent = 'Fehler: ' + e.message; }
 </script>
 </body></html>
