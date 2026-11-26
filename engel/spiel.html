@@ -499,6 +499,7 @@ async function szene4() {
   await sleep(2500);
 }
 async function szene5() {
+  if (!current) { await goRoom('wohnzimmer', 0.389, SIT, 0.28); hotspots = WZ_DINGE; engelVideo?.play().catch(() => {}); }
   ringPhone();
   await sleep(1500);
   await say('engel', 'Das Telefon. Das ist bestimmt die Sabine. Gehen Sie mal ran, ich komm so schlecht hoch.', 'engel_telefon');
@@ -526,6 +527,7 @@ async function szene5() {
 async function szene5b() {
   const nein = mood === 'misstrauisch' || waschWahl === 'b' || waschWahl === 'c';
   if (!nein) return;
+  if (!current) { await goRoom('wohnzimmer', 0.389, SIT, 0.28); engelVideo?.play().catch(() => {}); }
   await say('engel', 'Heute lass ich mich nicht waschen. Fertig.', 'engel_nein');
   await ownWords('Frau Engel sagt Nein. Was tust du jetzt?');
   const c = await choose([
