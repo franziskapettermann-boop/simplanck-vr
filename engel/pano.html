@@ -137,7 +137,7 @@ if (IMG.startsWith('wohnzimmer') && q.get('engel') !== '0') {
 }
 
 // Umsehen per Wischen, Kopf bewegen per Tasten
-let yaw = +(new URLSearchParams(location.search).get('yaw') || (IMG.startsWith('wohnzimmer') ? -0.77 : 0)), pitch = +(new URLSearchParams(location.search).get('pitch') || 0), drag = null, off = new THREE.Vector3(), duck = false, sway = false;
+let yaw = +(new URLSearchParams(location.search).get('yaw') || (IMG.startsWith('wohnzimmer') ? -0.77 : 0)), pitch = +(new URLSearchParams(location.search).get('pitch') || 0), drag = null, off = new THREE.Vector3(), duck = IMG.startsWith('wohnzimmer'), sway = false;
 addEventListener('pointerdown', e => { if (e.target.tagName !== 'BUTTON') drag = [e.clientX, e.clientY]; });
 addEventListener('pointerup', () => drag = null);
 addEventListener('pointermove', e => {
@@ -149,6 +149,7 @@ addEventListener('pointermove', e => {
 const step = (x, z) => { off.x = Math.max(-0.5, Math.min(0.5, off.x + x * 0.1)); off.z = Math.max(-0.6, Math.min(0.4, off.z + z * 0.1)); };
 document.querySelectorAll('[data-m]').forEach(b => b.onclick = () => { const [x, , z] = b.dataset.m.split(',').map(Number); step(x, z); });
 addEventListener('keydown', e => ({ ArrowLeft: () => step(-1, 0), ArrowRight: () => step(1, 0), ArrowUp: () => step(0, -1), ArrowDown: () => step(0, 1) }[e.key]?.()));
+document.getElementById('duck').classList.toggle('on', duck);
 document.getElementById('duck').onclick = e => { duck = !duck; e.target.classList.toggle('on', duck); };
 document.querySelectorAll('[data-r]').forEach(b => { b.classList.toggle('on', b.dataset.r === IMG); b.onclick = () => location.search = '?bild=' + b.dataset.r; });
 document.getElementById('sway').onclick = e => { sway = !sway; e.target.classList.toggle('on', sway); };
