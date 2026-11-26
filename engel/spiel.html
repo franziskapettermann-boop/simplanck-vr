@@ -581,8 +581,8 @@ const BAD_DINGE = [
 async function szene7() {
   // Im Bad: Intimsphäre, Kälte, Selbstständigkeit, Notruf
   const bad = await buildRoom('bad');
-  if (!bad.engel) bad.engel = await addFigur(bad, { u: qn('bu', 0.43), v: qn('bv', 0.84), groesse: qn('bg', 1.4), src: 'figur/engel_bad_alpha.mp4' });
-  await goRoom('bad', 0.5, STAND, 0.12); hotspots = BAD_DINGE; bad.engel.play();
+  if (!bad.engel) bad.engel = await addFigur(bad, { u: qn('bu', 0.43), v: qn('bv', 0.80), groesse: qn('bg', 1.45), src: 'figur/engel_bad_alpha.mp4' });
+  await goRoom('bad', 0.47, STAND, 0.3); hotspots = BAD_DINGE; bad.engel.play();
   const strasse = playTon('sfx_strasse', 0.35, true);
   let fensterZu = false, tuerZu = false, warm = false;
   note('Frau Engel sitzt auf dem Hocker am Waschbecken. Den Bademantel hat sie ausgezogen, ein Handtuch liegt über ihren Schultern. Durchs gekippte Fenster zieht es, draußen rauscht der Verkehr.');
