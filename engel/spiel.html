@@ -419,6 +419,7 @@ async function szene2() {
 }
 const FLUR_WEGE = [
   { u: 0.372, v: 0.80, label: 'Ins Bad schauen', go: 'bad' },
+  { u: 0.50, v: 0.74, label: 'Weiter in den Flur', go: 'flur2' },
   { u: 0.915, v: 0.80, label: 'Ins Wohnzimmer', go: 'wohnzimmer' }
 ];
 async function szene3() {
@@ -437,6 +438,14 @@ async function szene3() {
     setMarkers(current, FLUR_WEGE);
     const ziel = await waitMarker();
     if (ziel === 'wohnzimmer') break;
+    if (ziel === 'flur2') {
+      // zweiter Standpunkt hinten im Flur: Küche, Schlafzimmertür, Blick zurück zur Wohnungstür
+      await goRoom('flur2', 0.75, STAND); hotspots = [];
+      setMarkers(current, [{ u: 0.40, v: 0.76, label: 'Zurück nach vorn', go: 'flur' }]);
+      await waitMarker();
+      await goRoom('flur', 0.5, STAND); hotspots = FLUR_DINGE;
+      continue;
+    }
     // Ins Bad, ohne gefragt zu haben: wird gemerkt und später besprochen
     seen.add('bad_ungefragt'); log.push('Allein ins Bad geschaut, ohne zu fragen');
     await goRoom('bad', 0.5, STAND); hotspots = [];
