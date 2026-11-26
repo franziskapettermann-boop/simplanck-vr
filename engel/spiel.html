@@ -591,7 +591,7 @@ const BAD_DINGE = [
 async function szene7() {
   // Im Bad: Intimsphäre, Kälte, Selbstständigkeit, Notruf
   const bad = await buildRoom('bad');
-  if (!bad.engel) bad.engel = addBild(bad, { u: 0.46, v: 0.6, hfov: 95, aspect: 16 / 9, src: 'figur/engel_bad_bild.png?v=2', cx: 731, cy: 766, w: 2590, h: 1458 });
+  if (!bad.engel) bad.engel = addBild(bad, { u: 0.46, v: 0.6, hfov: 95, aspect: 16 / 9, src: 'figur/engel_bad_bild.png?v=3', cx: 731, cy: 766, w: 2590, h: 1458 });
   await goRoom('bad', 0.47, STAND, 0.3); hotspots = BAD_DINGE;
   const strasse = playTon('sfx_strasse', 0.35, true);
   let fensterZu = false, tuerZu = false, warm = false;
