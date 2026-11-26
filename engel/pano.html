@@ -117,7 +117,7 @@ if (IMG.startsWith('wohnzimmer') && q.get('engel') !== '0') {
   if (meta) {
     const P = (u, v) => { const g = sample(u, v), d = 1 / (g * (1 / NEAR - 1 / FAR) + 1 / FAR), lon = (u - 0.5) * 2 * Math.PI, lat = (0.5 - v) * Math.PI;
       return new THREE.Vector3(Math.sin(lon) * Math.cos(lat) * d, Math.sin(lat) * d + EYE, -Math.cos(lon) * Math.cos(lat) * d); };
-    const cu = +(q.get('cu') || 0.381), top = P(cu, +(q.get('vt') || 0.535)), foot = P(cu, +(q.get('vb') || 0.81));
+    const cu = +(q.get('cu') || 0.389), top = P(cu, +(q.get('vt') || 0.535)), foot = P(cu, +(q.get('vb') || 0.81));
     const v = document.createElement('video');
     v.src = 'figur/engel_alpha.mp4'; v.loop = true; v.muted = true; v.playsInline = true; v.crossOrigin = 'anonymous'; v.preload = 'auto';
     const vt = new THREE.VideoTexture(v); vt.colorSpace = THREE.NoColorSpace;
@@ -125,7 +125,7 @@ if (IMG.startsWith('wohnzimmer') && q.get('engel') !== '0') {
       vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
       fragmentShader: 'uniform sampler2D map; varying vec2 vUv; void main(){ vec3 c = texture2D(map, vec2(vUv.x * 0.5, vUv.y)).rgb; float a = texture2D(map, vec2(0.5 + vUv.x * 0.5, vUv.y)).r; a = smoothstep(0.15, 0.85, a); if (a < 0.01) discard; gl_FragColor = vec4(c, a); }' });
     const [, , cw, ch] = meta.ausschnitt;
-    const h = (top.y - foot.y) * +(q.get('hs') || 1.2), w = h * cw / ch;
+    const h = (top.y - foot.y) * +(q.get('hs') || 1.12), w = h * cw / ch;
     const plane = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat);
     const base = foot.clone().multiplyScalar(+(q.get('dz') || 0.93));
     plane.position.set(base.x + +(q.get('dx') || 0), foot.y + h / 2 + +(q.get('dy') || 0), base.z);
