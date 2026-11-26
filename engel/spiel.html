@@ -117,6 +117,24 @@ async function addEngel(room) {
   room.group.add(plane);
 }
 
+// Stehende Figur (freigestelltes Video), Füße auf einem Bodenpunkt des Panoramas
+const Q = new URLSearchParams(location.search), qn = (k, d) => Q.has(k) ? parseFloat(Q.get(k)) : d;
+async function addFigur(room, { src, u, v, groesse = 1.58, rand = 0.012 }) {
+  const meta = await fetch(src.replace('.mp4', '.json')).then(r => r.json());
+  const vid = document.createElement('video'); vid.src = src; vid.loop = true; vid.muted = true; vid.playsInline = true; vid.crossOrigin = 'anonymous'; vid.preload = 'auto';
+  const vt = new THREE.VideoTexture(vid); vt.colorSpace = THREE.NoColorSpace;
+  const mat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, depthTest: false, uniforms: { map: { value: vt } },
+    vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
+    fragmentShader: 'uniform sampler2D map; varying vec2 vUv; void main(){ vec3 c = texture2D(map, vec2(vUv.x * 0.5, vUv.y)).rgb; float a = smoothstep(0.15, 0.85, texture2D(map, vec2(0.5 + vUv.x * 0.5, vUv.y)).r); if (a < 0.01) discard; gl_FragColor = vec4(c, a); }' });
+  const foot = room.point(u, v, 0);
+  // Maßstab aus der Tiefe: der Boden liegt bei -STAND, also passt die Größe zur Bodenhöhe des Fußpunkts
+  const k = -foot.y / STAND, h = groesse * k * (1 + 2 * rand) * qn('hs', 1), w = h * meta.ausschnitt[2] / meta.ausschnitt[3];
+  const plane = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat);
+  plane.position.set(foot.x, foot.y - groesse * k * rand + h / 2 + qn('dy', 0), foot.z); plane.lookAt(0, plane.position.y, 0); plane.renderOrder = 5;
+  room.group.add(plane);
+  const fig = { vid, plane, play: () => vid.play().catch(() => {}) }; windows.push(fig); return fig;
+}
+
 // Videofenster: ein Ausschnitt des Panoramas wird lebendig (Video aus genau diesem Blickwinkel)
 const windows = []; window.__windows = windows;
 function addWindow(room, { u, v, vfov, aspect, src, dist }) {
@@ -298,7 +316,7 @@ let opened = false;
 let mood = new URLSearchParams(location.search).get('tagesform') || MOODS[Math.floor(Math.random() * 3)];
 const byMood = o => o[mood] || o.gut;
 
-const TUER_FENSTER = { u: 0.18, v: 0.56, vfov: 110, aspect: 9 / 16, src: 'figur/engel_tuer.mp4' };
+const TUER_FIGUR = { u: qn('fu', 0.207), v: qn('fv', 0.757), src: 'figur/engel_tuer_alpha.mp4' };
 const FLUR_DINGE = [
   { id: 'laeufer', u: 0.44, v: 0.915, r: 10, name: 'Läufer mit umgeschlagener Ecke' },
   { id: 'pantoffeln', u: 0.491, v: 0.79, r: 8, name: 'Pantoffeln mitten im Weg' },
@@ -333,10 +351,10 @@ async function szene1() {
   if (c.k === 'auf') { note('Du schließt auf. Frau Engel steht direkt hinter der Tür im Morgenmantel und zuckt zusammen.'); await sleep(2500); await say('engel', 'Huch! Wer sind Sie denn? Wie kommen Sie hier rein?'); mood = 'misstrauisch'; opened = true; }
 }
 async function szene2() {
-  const offen = await buildRoom('treppenhausoffen');
-  if (!offen.door) offen.door = addWindow(offen, TUER_FENSTER);
+  const offen = await buildRoom('treppenhausleer');
+  if (!offen.door) offen.door = await addFigur(offen, TUER_FIGUR);
   offen.door.play();
-  await goRoom('treppenhausoffen', TUER_FENSTER.u, STAND, -0.22);
+  await goRoom('treppenhausleer', TUER_FIGUR.u, STAND, -0.12);
   offen.door.play();
   await sleep(1200);
   if (!opened) await say('engel', byMood({ gut: 'Ja? Wer sind Sie?', müde: 'Ja … wer ist da?', misstrauisch: 'Ja? … Wer sind Sie? Ich kauf nichts.' }));
