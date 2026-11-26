@@ -270,17 +270,58 @@ for (let i = 0; i < 2; i++) {
     const m = new THREE.Matrix4().extractRotation(ctl.matrixWorld);
     ray.ray.origin.setFromMatrixPosition(ctl.matrixWorld); ray.ray.direction.set(0, 0, -1).applyMatrix4(m);
     windows.forEach(w => w.play()); engelVideo?.play().catch(() => {});
-    const hit = ray.intersectObject(panel.mesh)[0]; if (!hit) return;
+    const o = ray.ray.origin.clone(), d = ray.ray.direction.clone();
+    const hit = ray.intersectObject(panel.mesh)[0]; if (!hit) { tryMarker(o, d); return; }
     const py = (1 - hit.uv.y) * 640; const row = panel.rows.find(r => py >= r[0] && py <= r[1]); if (row) pick(row[2]);
   });
 }
 renderer.xr.addEventListener('sessionstart', () => { setTimeout(placeRoom, 300); panel.mesh.visible = true; panel.place(); engelVideo?.play().catch(() => {}); windows.forEach(w => w.play()); });
 renderer.xr.addEventListener('sessionend', () => { panel.mesh.visible = false; });
 
+// ---------- Bewegen wie bei Paneo: Bodenmarken anklicken (Maus, Finger oder Controller) ----------
+let markers = [], markerResolve = null;
+function labelTex(text) {
+  const c = document.createElement('canvas'); c.width = 512; c.height = 96; const x = c.getContext('2d');
+  x.fillStyle = 'rgba(0,0,0,0.55)'; x.beginPath(); x.roundRect(4, 4, 504, 88, 44); x.fill();
+  x.fillStyle = '#fff'; x.font = '600 44px system-ui, sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(text, 256, 50);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+}
+function setMarkers(room, list) {
+  markers.forEach(m => m.obj.parent?.remove(m.obj)); markers = [];
+  for (const m of list) {
+    const p = room.point(m.u, m.v, 0).multiplyScalar(m.near || 0.9), g = new THREE.Group(); g.position.copy(p); g.position.y += 0.02;
+    const ring = new THREE.Mesh(new THREE.RingGeometry(0.16, 0.24, 48), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.9, depthTest: false, side: THREE.DoubleSide }));
+    ring.rotation.x = -Math.PI / 2; ring.renderOrder = 8;
+    const dot = new THREE.Mesh(new THREE.CircleGeometry(0.08, 32), ring.material.clone()); dot.rotation.x = -Math.PI / 2; dot.renderOrder = 8;
+    const lab = new THREE.Sprite(new THREE.SpriteMaterial({ map: labelTex(m.label), depthTest: false, transparent: true })); lab.scale.set(0.8, 0.15, 1); lab.position.y = 0.4; lab.renderOrder = 9;
+    const hit = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 0.9, 16), new THREE.MeshBasicMaterial({ visible: false })); hit.position.y = 0.3;
+    g.add(ring, dot, lab, hit); room.group.add(g);
+    markers.push({ ...m, obj: g, ring, hit });
+  }
+}
+const waitMarker = () => new Promise(r => { markerResolve = r; });
+function tryMarker(origin, dir) {
+  if (!markers.length) return false;
+  ray.ray.origin.copy(origin); ray.ray.direction.copy(dir);
+  const hits = ray.intersectObjects(markers.flatMap(m => [m.hit, m.ring]), false); if (!hits.length) return false;
+  const m = markers.find(k => k.hit === hits[0].object || k.ring === hits[0].object);
+  const r = markerResolve; markerResolve = null; setMarkers(current, []); r?.(m.go); return true;
+}
+function pulseMarkers(t) { markers.forEach(m => { const s = 1 + 0.12 * Math.sin(t * 3); m.ring.scale.set(s, s, s); }); }
+
 // ---------- Kamera und Raumwechsel ----------
 let yaw = 0, pitch = 0, eye = STAND, drag = null, current = null;
 addEventListener('pointerdown', e => { if (e.target === renderer.domElement) drag = [e.clientX, e.clientY]; engelVideo?.play().catch(() => {}); windows.forEach(w => w.play()); });
-addEventListener('pointerup', () => drag = null);
+let downAt = null;
+addEventListener('pointerdown', e => { downAt = e.target === renderer.domElement ? [e.clientX, e.clientY] : null; });
+addEventListener('pointerup', e => {
+  drag = null;
+  if (downAt && Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]) < 8 && markers.length) {
+    const v = new THREE.Vector2(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
+    ray.setFromCamera(v, camera); tryMarker(ray.ray.origin.clone(), ray.ray.direction.clone());
+  }
+  downAt = null;
+});
 addEventListener('pointermove', e => { if (!drag) return; yaw += (e.clientX - drag[0]) * 0.004; pitch += (e.clientY - drag[1]) * 0.004; pitch = Math.max(-1.3, Math.min(1.3, pitch)); drag = [e.clientX, e.clientY]; });
 const fade = new THREE.Mesh(new THREE.SphereGeometry(0.3, 16, 8), new THREE.MeshBasicMaterial({ color: 0, transparent: true, opacity: 0, side: THREE.BackSide, depthTest: false }));
 fade.renderOrder = 20; camera.add(fade);
@@ -297,6 +338,7 @@ async function goRoom(name, lookU, h, lookDown = 0.05) {
   await fadeTo(1);
   const room = await buildRoom(name);
   if (name === 'wohnzimmer' && !engelVideo) await addEngel(room);
+  setMarkers(room, []); markerResolve = null;
   if (current) scene.remove(current.group);
   scene.add(room.group); current = room;
   eye = h; placeRoom();
@@ -308,7 +350,7 @@ let last = performance.now();
 renderer.setAnimationLoop(() => {
   const now = performance.now(), dt = (now - last) / 1000; last = now;
   if (!renderer.xr.isPresenting) { camera.position.set(0, eye, 0); camera.rotation.set(-pitch, -yaw, 0, 'YXZ'); }
-  trackGaze(dt);
+  trackGaze(dt); pulseMarkers(now / 1000);
   renderer.render(scene, camera);
 });
 
@@ -371,19 +413,40 @@ async function szene2() {
   if (c.k === 'b') { await say('engel', 'Zum Waschen? Ich bin doch nicht schmutzig.'); if (mood === 'gut') mood = 'misstrauisch'; }
   if (c.k === 'c') { await say('engel', 'Moment mal, junger Mensch! Da wird zuerst gefragt.', 'engel_moment'); if (mood === 'gut') mood = 'müde'; }
   await say('engel', byMood({ gut: 'Kommen Sie rein, es zieht. Die Schuhe können Sie anlassen, ich hab eh nicht geputzt.', müde: 'Kommen Sie halt rein. Machen Sie die Tür zu, es zieht.', misstrauisch: 'Machen Sie die Tür hinter sich zu.' }));
+  setMarkers(rooms.treppenhausleer, [{ u: TUER_FIGUR.u + 0.03, v: 0.86, near: 0.8, label: 'Eintreten', go: 'flur' }]);
+  note('Tippe auf den Kreis am Boden, um einzutreten.');
+  await waitMarker();
 }
+const FLUR_WEGE = [
+  { u: 0.372, v: 0.80, label: 'Ins Bad schauen', go: 'bad' },
+  { u: 0.915, v: 0.80, label: 'Ins Wohnzimmer', go: 'wohnzimmer' }
+];
 async function szene3() {
   await goRoom('flur', 0.5, STAND);
   hotspots = FLUR_DINGE; playTon('sfx_rollator', 0.8);
-  await say('engel', 'Kommen Sie, wir gehen ins Wohnzimmer. Ich bin nicht mehr so schnell.');
-  note('Frau Engel geht langsam voraus. Du hast Zeit, dich umzusehen.');
-  await sleep(7000);
-  await say('engel', byMood({ gut: 'Die Sabine meint ja, ich schaff das nicht mehr allein. Dabei mach ich das hier seit zweiundfünfzig Jahren.', müde: 'Heut ist wieder so ein Tag … alles geht langsam.', misstrauisch: 'Die Sabine hat Sie geschickt, gell? Die macht sich immer gleich Sorgen.' }));
-  await sleep(9000);
-  await say('engel', byMood({ gut: 'Passen Sie auf, hier ist es ein bisschen dunkel. Die Lampe macht’s nicht mehr.', müde: 'Das Licht hier … das muss mal einer richten.', misstrauisch: 'Hier vorne rechts. Nicht in die Küche.' }));
-  await sleep(12000);
+  // Frau Engel redet, während man sich frei umsieht und bewegt
+  (async () => {
+    await say('engel', 'Kommen Sie, wir gehen ins Wohnzimmer. Ich bin nicht mehr so schnell.');
+    note('Frau Engel geht langsam voraus. Du hast Zeit, dich umzusehen. Die Kreise am Boden bringen dich in einen anderen Raum.');
+    await sleep(7000);
+    await say('engel', byMood({ gut: 'Die Sabine meint ja, ich schaff das nicht mehr allein. Dabei mach ich das hier seit zweiundfünfzig Jahren.', müde: 'Heut ist wieder so ein Tag … alles geht langsam.', misstrauisch: 'Die Sabine hat Sie geschickt, gell? Die macht sich immer gleich Sorgen.' }));
+    await sleep(9000);
+    await say('engel', byMood({ gut: 'Passen Sie auf, hier ist es ein bisschen dunkel. Die Lampe macht’s nicht mehr.', müde: 'Das Licht hier … das muss mal einer richten.', misstrauisch: 'Hier vorne rechts. Nicht in die Küche.' }));
+  })();
+  while (true) {
+    setMarkers(current, FLUR_WEGE);
+    const ziel = await waitMarker();
+    if (ziel === 'wohnzimmer') break;
+    // Ins Bad, ohne gefragt zu haben: wird gemerkt und später besprochen
+    seen.add('bad_ungefragt'); log.push('Allein ins Bad geschaut, ohne zu fragen');
+    await goRoom('bad', 0.5, STAND); hotspots = [];
+    await say('engel', mood === 'misstrauisch' ? 'Hallo? Wo sind Sie denn? Da ist das Bad, da haben Sie nichts zu suchen!' : 'Hallo? … Wo sind Sie denn hin?');
+    setMarkers(current, [{ u: 0.80, v: 0.78, label: 'Zurück in den Flur', go: 'flur' }]);
+    await waitMarker();
+    if (mood === 'gut') mood = 'misstrauisch';
+    await goRoom('flur', 0.37, STAND); hotspots = FLUR_DINGE;
+  }
   hotspots = [];
-  await choose([{ label: 'Ins Wohnzimmer gehen' }]);
 }
 async function szene4() {
   note('Frau Engel zeigt auf einen Stuhl gegenüber ihrem Sessel. Du setzt dich.');
@@ -418,7 +481,7 @@ async function szene4() {
 async function ende() {
   hotspots = [];
   const flur = FLUR_DINGE.map(d => `${seen.has(d.id) ? '✔' : '✗'} ${d.name}`).join('<br>');
-  sub(`<b>Ende des Testabschnitts.</b> Weiter geht es später mit dem Anruf der Tochter.<br><br>Im Flur hast du ${FLUR_DINGE.filter(d => seen.has(d.id)).length} von ${FLUR_DINGE.length} Dingen länger angesehen:<br>${flur}<br><br>Tagesform von Frau Engel am Ende: ${mood}`);
+  sub(`<b>Ende des Testabschnitts.</b> Weiter geht es später mit dem Anruf der Tochter.<br><br>Im Flur hast du ${FLUR_DINGE.filter(d => seen.has(d.id)).length} von ${FLUR_DINGE.length} Dingen länger angesehen:<br>${flur}${seen.has('bad_ungefragt') ? '<br><br>Du hast allein ins Bad geschaut, ohne Frau Engel zu fragen. Es ist ihre Wohnung: Wie hätte sie das wohl empfunden?' : ''}<br><br>Tagesform von Frau Engel am Ende: ${mood}`);
   if (!renderer.xr.isPresenting && recordings.length) {
     const box = document.createElement('div'); box.style.cssText = 'max-width:900px;font-size:15px;line-height:1.5;text-align:left';
     box.innerHTML = '<b>Deine eigenen Worte:</b>';
