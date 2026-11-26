@@ -149,6 +149,16 @@ function addGang(room, { u, v, hfov, aspect, src }) {
   return { vid, plane, run: () => new Promise(res => { vid.currentTime = 0; plane.visible = true; vid.onended = () => { plane.visible = false; res(); }; vid.play().catch(() => res()); setTimeout(() => { plane.visible = false; res(); }, 12000); }) };
 }
 
+// Standbild im Blickausschnitt eines Panoramas (z. B. Frau Engel im Bad), Lage in Pixeln des Ausschnitts (Breite 1920)
+function addBild(room, { u, v, hfov, aspect, src, cx, cy, w, h }) {
+  const D = room.point(u, v, 0).length() * 0.85, px = D * Math.tan(hfov * Math.PI / 360) / 960;
+  const tex = new THREE.TextureLoader().load(src); tex.colorSpace = THREE.SRGBColorSpace;
+  const plane = new THREE.Mesh(new THREE.PlaneGeometry(w * px, h * px), new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthTest: false, depthWrite: false }));
+  plane.position.copy(dirOf(u, v).multiplyScalar(D)); plane.lookAt(0, 0, 0);
+  plane.translateX((cx - 960) * px); plane.translateY(-(cy - 540) * px); plane.renderOrder = 6;
+  room.group.add(plane); return plane;
+}
+
 // Videofenster: ein Ausschnitt des Panoramas wird lebendig (Video aus genau diesem Blickwinkel)
 const windows = []; window.__windows = windows;
 function addWindow(room, { u, v, vfov, aspect, src, dist }) {
@@ -581,8 +591,8 @@ const BAD_DINGE = [
 async function szene7() {
   // Im Bad: Intimsphäre, Kälte, Selbstständigkeit, Notruf
   const bad = await buildRoom('bad');
-  if (!bad.engel) bad.engel = await addFigur(bad, { u: qn('bu', 0.43), v: qn('bv', 0.80), groesse: qn('bg', 1.45), src: 'figur/engel_bad_alpha.mp4' });
-  await goRoom('bad', 0.47, STAND, 0.3); hotspots = BAD_DINGE; bad.engel.play();
+  if (!bad.engel) bad.engel = addBild(bad, { u: 0.46, v: 0.6, hfov: 95, aspect: 16 / 9, src: 'figur/engel_bad_bild.png', cx: 731, cy: 766, w: 2590, h: 1458 });
+  await goRoom('bad', 0.47, STAND, 0.3); hotspots = BAD_DINGE;
   const strasse = playTon('sfx_strasse', 0.35, true);
   let fensterZu = false, tuerZu = false, warm = false;
   note('Frau Engel sitzt auf dem Hocker am Waschbecken. Den Bademantel hat sie ausgezogen, ein Handtuch liegt über ihren Schultern. Durchs gekippte Fenster zieht es, draußen rauscht der Verkehr.');
