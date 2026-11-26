@@ -136,7 +136,7 @@ if (IMG.startsWith('wohnzimmer') && q.get('engel') !== '0') {
   const h = (top.y - foot.y) * +(q.get('hs') || 1.05), w = h * ((U1 - U0) * 1920) / ((V1 - V0) * 1080);
   const plane = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat);
   const base = foot.clone().multiplyScalar(+(q.get('dz') || 0.92));
-  plane.position.set(base.x, foot.y + h / 2 - 0.05, base.z);
+  plane.position.set(base.x, foot.y + h / 2 + +(q.get('dy') || 0.38), base.z);
   plane.lookAt(0, plane.position.y, 0);
   plane.renderOrder = 2; scene.add(plane);
   const start = () => v.play().catch(() => {});
