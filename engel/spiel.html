@@ -223,14 +223,14 @@ addEventListener('pointermove', e => { if (!drag) return; yaw += (e.clientX - dr
 const fade = new THREE.Mesh(new THREE.SphereGeometry(0.3, 16, 8), new THREE.MeshBasicMaterial({ color: 0, transparent: true, opacity: 0, side: THREE.BackSide, depthTest: false }));
 fade.renderOrder = 20; camera.add(fade);
 async function fadeTo(o) { const s = fade.material.opacity; for (let t = 0; t <= 1; t += 0.08) { fade.material.opacity = s + (o - s) * t; await sleep(25); } fade.material.opacity = o; }
-async function goRoom(name, lookU, h) {
+async function goRoom(name, lookU, h, lookDown = 0.05) {
   await fadeTo(1);
   const room = await buildRoom(name);
   if (name === 'wohnzimmer' && !engelVideo) await addEngel(room);
   if (current) scene.remove(current.group);
   scene.add(room.group); current = room;
   eye = h; room.group.position.y = h;
-  yaw = (lookU - 0.5) * 2 * Math.PI; pitch = 0.05;
+  yaw = (lookU - 0.5) * 2 * Math.PI; pitch = lookDown;
   if (renderer.xr.isPresenting) panel.place();
   await fadeTo(0);
 }
@@ -245,6 +245,7 @@ renderer.setAnimationLoop(() => {
 // ---------- Geschichte ----------
 const log = [];
 const MOODS = ['gut', 'müde', 'misstrauisch'];
+let opened = false;
 let mood = new URLSearchParams(location.search).get('tagesform') || MOODS[Math.floor(Math.random() * 3)];
 const byMood = o => o[mood] || o.gut;
 
@@ -279,12 +280,12 @@ async function szene1() {
   const c = await choose([{ label: 'Weiter warten', k: 'warten' }, { label: 'Noch einmal klingeln', k: 'klingeln' }, { label: 'Mit dem Schlüssel aufschließen', k: 'auf' }]);
   if (c.k === 'warten') { note('Von drinnen langsame Schritte und das Rattern eines Rollators. Die Tür geht auf.'); await sleep(3500); }
   if (c.k === 'klingeln') { bell(); await sleep(1500); await say('engel', 'Ja doch, ich komm ja!'); note('Die Tür geht auf.'); await sleep(1500); }
-  if (c.k === 'auf') { note('Du schließt auf. Frau Engel steht direkt hinter der Tür im Morgenmantel und zuckt zusammen.'); await sleep(2500); await say('engel', 'Huch! Wer sind Sie denn? Wie kommen Sie hier rein?'); mood = 'misstrauisch'; }
+  if (c.k === 'auf') { note('Du schließt auf. Frau Engel steht direkt hinter der Tür im Morgenmantel und zuckt zusammen.'); await sleep(2500); await say('engel', 'Huch! Wer sind Sie denn? Wie kommen Sie hier rein?'); mood = 'misstrauisch'; opened = true; }
 }
 async function szene2() {
   note('Frau Engel im Morgenmantel, eine Hand am Rollator, die andere am Türrahmen.');
   await sleep(1500);
-  if (mood !== 'misstrauisch') await say('engel', byMood({ gut: 'Ja? Wer sind Sie?', müde: 'Ja … wer ist da?' }));
+  if (!opened) await say('engel', byMood({ gut: 'Ja? Wer sind Sie?', müde: 'Ja … wer ist da?', misstrauisch: 'Ja? … Wer sind Sie? Ich kauf nichts.' }));
   await ownWords('Was sagst du zur Begrüßung? Schreib deinen Satz auf, dann wähle, was am nächsten dran ist.');
   const c = await choose([
     { label: '„Guten Morgen, Frau Engel. Ich bin … vom Pflegedienst Sonnenhof. Ihre Tochter hat uns gebeten, Sie heute beim Waschen zu unterstützen. Darf ich reinkommen?“', k: 'a' },
@@ -304,7 +305,7 @@ async function szene3() {
   await choose([{ label: 'Ins Wohnzimmer gehen' }]);
 }
 async function szene4() {
-  await goRoom('wohnzimmer', 0.389, SIT);
+  await goRoom('wohnzimmer', 0.389, SIT, 0.28);
   hotspots = WZ_DINGE;
   engelVideo.play().catch(() => {});
   await sleep(1500);
