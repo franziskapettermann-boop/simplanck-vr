@@ -176,10 +176,13 @@ const VOICES = { engel: { rate: 0.82, pitch: 0.85 }, jana: { rate: 1.0, pitch: 1
 const NAMES = { engel: 'Frau Engel', jana: 'Jana', tochter: 'Tochter' };
 let deVoice = null;
 speechSynthesis.onvoiceschanged = () => { deVoice = speechSynthesis.getVoices().find(v => v.lang.startsWith('de')) || null; };
-function say(who, text) {
+// Echte Aufnahmen (ElevenLabs) liegen in ton/<name>.mp3; ohne Datei spricht die Browserstimme
+function playTon(file, vol = 1, loop = false) { const a = new Audio('ton/' + file + '.mp3'); a.volume = vol; a.loop = loop; a.play().catch(() => {}); return a; }
+function say(who, text, file) {
   sub(`<b>${NAMES[who]}:</b> ${text}`);
+  if (file) return new Promise(res => { const a = playTon(file); let done = false; const fin = () => { if (!done) { done = true; res(); } };
+    a.onended = fin; a.onerror = () => { done = true; say(who, text).then(res); }; setTimeout(fin, 20000); });
   return new Promise(res => {
-    // später: echte Aufnahme, falls vorhanden (stimmen/<id>.mp3)
     const u = new SpeechSynthesisUtterance(text.replace(/…/g, ','));
     u.lang = 'de-DE'; if (deVoice) u.voice = deVoice; Object.assign(u, VOICES[who] || {});
     let done = false; const fin = () => { if (!done) { done = true; res(); } };
@@ -346,7 +349,7 @@ async function szene1() {
   await sleep(4000); note('Stille.');
   await sleep(5000);
   const c = await choose([{ label: 'Weiter warten', k: 'warten' }, { label: 'Noch einmal klingeln', k: 'klingeln' }, { label: 'Mit dem Schlüssel aufschließen', k: 'auf' }]);
-  if (c.k === 'warten') { note('Von drinnen langsame Schritte und das Rattern eines Rollators. Die Tür geht auf.'); await sleep(2500); }
+  if (c.k === 'warten') { note('Von drinnen langsame Schritte und das Rattern eines Rollators. Die Tür geht auf.'); playTon('sfx_klingel_tuer'); await sleep(7000); }
   if (c.k === 'klingeln') { bell(); await sleep(1500); await say('engel', 'Ja doch, ich komm ja!'); note('Die Tür geht auf.'); await sleep(1500); }
   if (c.k === 'auf') { note('Du schließt auf. Frau Engel steht direkt hinter der Tür im Morgenmantel und zuckt zusammen.'); await sleep(2500); await say('engel', 'Huch! Wer sind Sie denn? Wie kommen Sie hier rein?'); mood = 'misstrauisch'; opened = true; }
 }
@@ -357,20 +360,21 @@ async function szene2() {
   await goRoom('treppenhausleer', TUER_FIGUR.u, STAND, 0.24);
   offen.door.play();
   await sleep(1200);
-  if (!opened) await say('engel', byMood({ gut: 'Ja? Wer sind Sie?', müde: 'Ja … wer ist da?', misstrauisch: 'Ja? … Wer sind Sie? Ich kauf nichts.' }));
+  if (!opened) { if (mood === 'gut') await say('engel', 'Ja bitte? … Ach, der Pflegedienst. Meine Tochter hat mir das erzählt.', 'engel_tuer'); else await say('engel', byMood({ müde: 'Ja … wer ist da?', misstrauisch: 'Ja? … Wer sind Sie? Ich kauf nichts.' })); }
   await ownWords('Was sagst du zur Begrüßung? Danach wählst du, was am nächsten dran ist.');
   const c = await choose([
     { label: '„Guten Morgen, Frau Engel. Ich bin … vom Pflegedienst Sonnenhof. Ihre Tochter hat uns gebeten, Sie heute beim Waschen zu unterstützen. Darf ich reinkommen?“', k: 'a' },
     { label: '„Hallo, ich bin die Neue vom Pflegedienst, zum Waschen!“', k: 'b' },
     { label: '„Guten Morgen, Frau Engel, wir gehen dann gleich mal ins Bad, ja?“', k: 'c' }]);
-  if (c.k === 'a') await say('engel', byMood({ gut: 'Ach so, die Sabine … na, dann kommen Sie halt rein.', müde: 'Ach, die Sabine. Ja … kommen Sie rein.', misstrauisch: 'Vom Pflegedienst … Haben Sie einen Ausweis? … Na gut. Kommen Sie.' }));
+  if (c.k === 'a' && mood !== 'misstrauisch') await say('engel', 'Na, dann kommen Sie halt rein. … Und Sie sind noch mal …?', 'engel_reinkommen');
+  else if (c.k === 'a') await say('engel', byMood({ gut: 'Ach so, die Sabine … na, dann kommen Sie halt rein.', müde: 'Ach, die Sabine. Ja … kommen Sie rein.', misstrauisch: 'Vom Pflegedienst … Haben Sie einen Ausweis? … Na gut. Kommen Sie.' }));
   if (c.k === 'b') { await say('engel', 'Zum Waschen? Ich bin doch nicht schmutzig.'); if (mood === 'gut') mood = 'misstrauisch'; }
-  if (c.k === 'c') { await say('engel', 'So schnell geht’s bei mir nicht.'); if (mood === 'gut') mood = 'müde'; }
+  if (c.k === 'c') { await say('engel', 'Moment mal, junger Mensch! Da wird zuerst gefragt.', 'engel_moment'); if (mood === 'gut') mood = 'müde'; }
   await say('engel', byMood({ gut: 'Kommen Sie rein, es zieht. Die Schuhe können Sie anlassen, ich hab eh nicht geputzt.', müde: 'Kommen Sie halt rein. Machen Sie die Tür zu, es zieht.', misstrauisch: 'Machen Sie die Tür hinter sich zu.' }));
 }
 async function szene3() {
   await goRoom('flur', 0.5, STAND);
-  hotspots = FLUR_DINGE;
+  hotspots = FLUR_DINGE; playTon('sfx_rollator', 0.8);
   await say('engel', 'Kommen Sie, wir gehen ins Wohnzimmer. Ich bin nicht mehr so schnell.');
   note('Frau Engel geht langsam voraus. Du hast Zeit, dich umzusehen.');
   await sleep(7000);
@@ -396,16 +400,17 @@ async function szene4() {
     { label: 'Darüber hinweggehen', k: 'c' }]);
   if (c1.k === 'a') await say('engel', 'Ach ja, richtig. Ich vergess das immer so schnell.');
   if (c1.k === 'foto') { await say('engel', 'Ja, das bin ich! Vierzig Jahre war ich Schneiderin. Da hab ich noch alles selber gemacht.'); if (mood === 'misstrauisch') mood = 'gut'; }
-  if (c1.k === 'b') { await say('engel', '… Ja. Entschuldigung.'); note('Frau Engel wird still. Der Kanarienvogel hört auf zu zwitschern.'); mood = 'misstrauisch'; await sleep(2500); }
+  if (c1.k === 'b') { await say('engel', 'Ach so … ja.', 'engel_achso'); note('Frau Engel wird still. Der Kanarienvogel hört auf zu zwitschern.'); mood = 'misstrauisch'; await sleep(2500); }
   await say('engel', byMood({ gut: 'Das da oben ist der Willi. Der singt, wenn’s ruhig ist. Mein Mann hat ihn mir noch geschenkt … also, den Vorgänger.', müde: 'Der Willi ist heut auch so still.', misstrauisch: 'Das ist der Willi. Den fasst keiner an.' }));
   await ownWords('Wie sprichst du das Waschen an?');
   const c2 = await choose([
     { label: 'Fragen, wie sie es gewohnt ist und wobei sie sich Hilfe wünscht', k: 'a' },
     { label: '„Ihre Tochter möchte, dass wir Sie zweimal die Woche waschen.“', k: 'b' },
     { label: '„Das geht ganz schnell, dann haben Sie’s hinter sich.“', k: 'c' }]);
-  if (c2.k === 'a') await say('engel', byMood({ gut: 'Also, ganz ehrlich: Ich wasch mich seit achtzig Jahren allein … na ja, den Rücken krieg ich nicht mehr hin. Und die Füße. Aber das Gesicht mach ich selber!', müde: 'Heute … eigentlich nur die Füße. Der Rest kann bis morgen warten.', misstrauisch: 'Ich kenn Sie ja gar nicht. … Vielleicht die Füße. Mehr nicht.' }));
-  if (c2.k === 'b') await say('engel', 'Die Sabine soll sich um ihren eigenen Kram kümmern.');
-  if (c2.k === 'c') await say('engel', 'Ich hab nichts hinter mich zu bringen.');
+  if (c2.k === 'a' && mood === 'gut') { await say('engel', 'Also, ganz ehrlich: Ich wasch mich seit achtzig Jahren allein. Ich brauch da niemanden. Das war die Idee meiner Tochter.', 'engel_allein'); await say('engel', 'Na ja … den Rücken krieg ich nicht mehr hin. Und die Füße auch nicht. Aber das Gesicht, das mach ich selber!', 'engel_ruecken'); }
+  else if (c2.k === 'a') await say('engel', byMood({ gut: 'Also, ganz ehrlich: Ich wasch mich seit achtzig Jahren allein … na ja, den Rücken krieg ich nicht mehr hin. Und die Füße. Aber das Gesicht mach ich selber!', müde: 'Heute … eigentlich nur die Füße. Der Rest kann bis morgen warten.', misstrauisch: 'Ich kenn Sie ja gar nicht. … Vielleicht die Füße. Mehr nicht.' }));
+  if (c2.k === 'b') await say('engel', 'Dann soll sich meine Tochter doch selber waschen lassen!', 'engel_tochter_wuetend');
+  if (c2.k === 'c') await say('engel', 'Jetzt fangen Sie auch noch an wie meine Tochter.', 'engel_wie_tochter');
   await sleep(800);
   note('Das Telefon im Flur klingelt …');
   await sleep(2500);
