@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Erster Besuch bei Frau Engel</title>
+<style>
+  html,body{margin:0;height:100%;background:#000;overflow:hidden;font-family:system-ui,sans-serif;color:#fff;touch-action:none}
+  #hud{position:fixed;left:0;right:0;bottom:0;padding:14px 16px 18px;background:linear-gradient(transparent,rgba(0,0,0,.82) 30%);display:flex;flex-direction:column;gap:10px;align-items:center}
+  #sub{max-width:900px;font-size:18px;line-height:1.4;text-align:center;text-shadow:0 1px 3px #000;min-height:1.4em}
+  #sub b{color:#ffd27a;font-weight:600}
+  #choices{display:flex;flex-direction:column;gap:8px;width:min(900px,100%)}
+  #choices button,#go{font:inherit;font-size:16px;text-align:left;padding:11px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.35);background:rgba(30,30,30,.85);color:#fff;cursor:pointer}
+  #choices button:hover{background:#2b6cb0}
+  #own{display:none;width:min(900px,100%);gap:8px}
+  #own textarea{flex:1;font:inherit;font-size:16px;border-radius:10px;padding:10px;min-height:52px;background:rgba(255,255,255,.95);color:#111;border:0}
+  #own button{font:inherit;font-size:16px;border-radius:10px;padding:0 16px;border:0;background:#2b6cb0;color:#fff}
+  #top{position:fixed;top:10px;left:12px;right:12px;font-size:13px;opacity:.85;text-shadow:0 1px 2px #000;display:flex;justify-content:space-between;gap:10px}
+  #start{position:fixed;inset:0;background:rgba(0,0,0,.82);display:flex;align-items:center;justify-content:center;z-index:5}
+  #start div{max-width:560px;padding:24px;line-height:1.5}
+  #start h1{font-size:24px;margin:0 0 10px}
+  #start button{font:inherit;font-size:18px;padding:12px 22px;border-radius:12px;border:0;background:#2b6cb0;color:#fff;margin-top:14px}
+  #VRButton{bottom:auto !important;top:40px}
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
+</head>
+<body>
+<div id="top"><span>Erster Besuch bei Frau Engel · Testabschnitt Szene 0–4</span><span>Bilder und Video KI-generiert · Stimmen vorläufig</span></div>
+<div id="start"><div>
+  <h1>Erster Besuch bei Frau Engel</h1>
+  Ambulanter Pflegedienst, Donnerstag, 9:12 Uhr. Du bist mit deiner Praxisanleiterin Jana unterwegs. Heute besuchst du zum ersten Mal Frau Hilde Engel, 84 Jahre.<br><br>
+  Schau dich überall in Ruhe um. Niemand zeigt dir, worauf du achten sollst. Manche Entscheidungen haben erst später Folgen.<br>
+  <small>Kopfhörer empfohlen. Am Tablet: wischen zum Umsehen. In der Brille: „Enter VR“, im Wohnzimmer bitte hinsetzen.</small><br>
+  <button id="startBtn">Losfahren</button>
+</div></div>
+<div id="hud">
+  <div id="sub"></div>
+  <div id="own"><textarea id="ownText" placeholder="Schreib hier, was du sagen oder tun würdest …"></textarea><button id="ownOk">Weiter</button></div>
+  <div id="choices"></div>
+</div>
+<script type="module">
+import * as THREE from 'three';
+import { VRButton } from 'three/addons/webxr/VRButton.js';
+
+// ---------- Grundgerüst ----------
+const NEAR = 0.9, FAR = 4.5, STAND = 1.6, SIT = 1.05;
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.xr.enabled = true;
+renderer.xr.setReferenceSpaceType('local-floor');
+document.body.appendChild(renderer.domElement);
+document.body.appendChild(VRButton.createButton(renderer));
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0x000000);
+const camera = new THREE.PerspectiveCamera(70, innerWidth / innerHeight, 0.05, 50);
+const rig = new THREE.Group(); rig.add(camera); scene.add(rig);
+addEventListener('resize', () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); });
+
+const $ = id => document.getElementById(id);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const loadImg = src => new Promise((r, f) => { const i = new Image(); i.crossOrigin = 'anonymous'; i.onload = () => r(i); i.onerror = f; i.src = src; });
+
+// ---------- Räume (360° mit Tiefe) ----------
+const rooms = {};
+async function buildRoom(name) {
+  if (rooms[name]) return rooms[name];
+  const [photo, depth] = await Promise.all([loadImg(name + '360.jpg'), loadImg(name + '360_tiefe.png')]);
+  const dc = document.createElement('canvas'); dc.width = depth.width; dc.height = depth.height;
+  const dx = dc.getContext('2d'); dx.drawImage(depth, 0, 0); const dd = dx.getImageData(0, 0, dc.width, dc.height).data;
+  const sample = (u, v) => {
+    const x = Math.min(dc.width - 1, Math.max(0, u * (dc.width - 1))), y = Math.min(dc.height - 1, Math.max(0, v * (dc.height - 1)));
+    const x0 = Math.floor(x), y0 = Math.floor(y), x1 = Math.min(dc.width - 1, x0 + 1), y1 = Math.min(dc.height - 1, y0 + 1), fx = x - x0, fy = y - y0;
+    const g = (a, b) => dd[(b * dc.width + a) * 4] / 255;
+    return (g(x0, y0) * (1 - fx) + g(x1, y0) * fx) * (1 - fy) + (g(x0, y1) * (1 - fx) + g(x1, y1) * fx) * fy;
+  };
+  const dist = (u, v) => 1 / (sample(u, v) * (1 / NEAR - 1 / FAR) + 1 / FAR);
+  const point = (u, v, eye) => { const d = dist(u, v), lon = (u - 0.5) * 2 * Math.PI, lat = (0.5 - v) * Math.PI;
+    return new THREE.Vector3(Math.sin(lon) * Math.cos(lat) * d, Math.sin(lat) * d + eye, -Math.cos(lon) * Math.cos(lat) * d); };
+  const SX = 512, SY = 256, n = (SX + 1) * (SY + 1);
+  const pos = new Float32Array(n * 3), uv = new Float32Array(n * 2), ds = new Float32Array(n);
+  for (let j = 0, k = 0; j <= SY; j++) for (let i = 0; i <= SX; i++, k++) {
+    const u = i / SX, v = j / SY, p = point(u % 1, v, 0); ds[k] = p.length();
+    pos.set([p.x, p.y, p.z], k * 3); uv.set([u, 1 - v], k * 2);
+  }
+  const idx = [];
+  for (let j = 0; j < SY; j++) for (let i = 0; i < SX; i++) {
+    const a = j * (SX + 1) + i, b = a + 1, c = a + SX + 1, e = c + 1;
+    if (Math.max(ds[a], ds[b], ds[c], ds[e]) / Math.min(ds[a], ds[b], ds[c], ds[e]) > 1.35) continue;
+    idx.push(a, b, c, b, e, c);
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3)); geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2)); geo.setIndex(idx);
+  const tex = new THREE.Texture(photo); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 8; tex.needsUpdate = true;
+  const group = new THREE.Group();
+  group.add(new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ map: tex, side: THREE.DoubleSide })));
+  const back = new THREE.Mesh(new THREE.SphereGeometry(FAR * 1.1, 64, 32), new THREE.MeshBasicMaterial({ map: tex, side: THREE.BackSide }));
+  back.scale.x = -1; back.rotation.y = -Math.PI / 2; group.add(back);
+  return rooms[name] = { group, point, sample };
+}
+
+// Frau Engel im Sessel (freigestelltes Video), nur im Wohnzimmer
+let engelVideo = null;
+async function addEngel(room) {
+  const meta = await fetch('figur/engel_alpha.json').then(r => r.json());
+  const top = room.point(0.389, 0.535, 0), foot = room.point(0.389, 0.81, 0);
+  const v = document.createElement('video'); v.src = 'figur/engel_alpha.mp4'; v.loop = true; v.muted = true; v.playsInline = true; v.crossOrigin = 'anonymous';
+  engelVideo = v;
+  const vt = new THREE.VideoTexture(v); vt.colorSpace = THREE.NoColorSpace;
+  const mat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, uniforms: { map: { value: vt } },
+    vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
+    fragmentShader: 'uniform sampler2D map; varying vec2 vUv; void main(){ vec3 c = texture2D(map, vec2(vUv.x * 0.5, vUv.y)).rgb; float a = smoothstep(0.15, 0.85, texture2D(map, vec2(0.5 + vUv.x * 0.5, vUv.y)).r); if (a < 0.01) discard; gl_FragColor = vec4(c, a); }' });
+  const h = (top.y - foot.y) * 1.12, w = h * meta.ausschnitt[2] / meta.ausschnitt[3];
+  const plane = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat);
+  const base = foot.clone().multiplyScalar(0.93);
+  plane.position.set(base.x, foot.y + h / 2, base.z); plane.lookAt(0, plane.position.y, 0); plane.renderOrder = 2;
+  room.group.add(plane);
+}
+
+// ---------- Blickführung: was wurde angesehen? ----------
+const seen = new Set(), gazeTime = {};
+let hotspots = [];
+const dirOf = (u, v) => { const lon = (u - 0.5) * 2 * Math.PI, lat = (0.5 - v) * Math.PI; return new THREE.Vector3(Math.sin(lon) * Math.cos(lat), Math.sin(lat), -Math.cos(lon) * Math.cos(lat)); };
+const fwd = new THREE.Vector3();
+function trackGaze(dt) {
+  camera.getWorldDirection(fwd);
+  for (const h of hotspots) {
+    const ang = fwd.angleTo(dirOf(h.u, h.v)) * 180 / Math.PI;
+    if (ang < (h.r || 9)) { gazeTime[h.id] = (gazeTime[h.id] || 0) + dt; if (gazeTime[h.id] > 1.8) seen.add(h.id); }
+  }
+}
+
+// ---------- Ton ----------
+let actx;
+function bell() { // zweitoniger Gong
+  actx = actx || new AudioContext();
+  [[660, 0], [520, 0.45]].forEach(([f, t]) => { const o = actx.createOscillator(), g = actx.createGain(); o.frequency.value = f; o.type = 'sine';
+    g.gain.setValueAtTime(0.0001, actx.currentTime + t); g.gain.exponentialRampToValueAtTime(0.4, actx.currentTime + t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime + t + 1.2);
+    o.connect(g).connect(actx.destination); o.start(actx.currentTime + t); o.stop(actx.currentTime + t + 1.3); });
+}
+const VOICES = { engel: { rate: 0.82, pitch: 0.85 }, jana: { rate: 1.0, pitch: 1.1 }, tochter: { rate: 1.05, pitch: 1.0 } };
+const NAMES = { engel: 'Frau Engel', jana: 'Jana', tochter: 'Tochter' };
+let deVoice = null;
+speechSynthesis.onvoiceschanged = () => { deVoice = speechSynthesis.getVoices().find(v => v.lang.startsWith('de')) || null; };
+function say(who, text) {
+  sub(`<b>${NAMES[who]}:</b> ${text}`);
+  return new Promise(res => {
+    // später: echte Aufnahme, falls vorhanden (stimmen/<id>.mp3)
+    const u = new SpeechSynthesisUtterance(text.replace(/…/g, ','));
+    u.lang = 'de-DE'; if (deVoice) u.voice = deVoice; Object.assign(u, VOICES[who] || {});
+    let done = false; const fin = () => { if (!done) { done = true; res(); } };
+    u.onend = fin; u.onerror = fin; speechSynthesis.speak(u);
+    setTimeout(fin, 1200 + text.length * 95);
+  });
+}
+const sub = html => { $('sub').innerHTML = html; panel.draw(); };
+const note = text => sub(`<i>${text}</i>`);
+
+// ---------- Auswahl und eigene Worte (Bildschirm und Brille) ----------
+let choiceResolve = null, currentChoices = [];
+function choose(list) {
+  currentChoices = list.filter(c => !c.needs || seen.has(c.needs));
+  const box = $('choices'); box.innerHTML = '';
+  currentChoices.forEach((c, i) => { const b = document.createElement('button'); b.textContent = c.label; b.onclick = () => pick(i); box.appendChild(b); });
+  panel.draw();
+  return new Promise(r => choiceResolve = r);
+}
+function pick(i) { const c = currentChoices[i]; if (!c || !choiceResolve) return; $('choices').innerHTML = ''; currentChoices = []; const r = choiceResolve; choiceResolve = null; panel.draw(); log.push(['Wahl', c.label]); r(c); }
+function ownWords(prompt) {
+  sub(`<i>${prompt}</i>`); $('own').style.display = 'flex'; $('ownText').value = ''; $('ownText').focus();
+  const vr = renderer.xr.isPresenting;
+  if (vr) return choose([{ label: 'Ich habe es laut ausgesprochen. Weiter.' }]).then(() => { $('own').style.display = 'none'; log.push(['Eigene Worte', '(laut gesprochen)']); });
+  return new Promise(r => $('ownOk').onclick = () => { $('own').style.display = 'none'; log.push(['Eigene Worte', $('ownText').value.trim() || '(leer)']); r($('ownText').value.trim()); });
+}
+
+// Panel für die Brille: Untertitel und Antworten auf einer Tafel
+const panel = (() => {
+  const cv = document.createElement('canvas'); cv.width = 1024; cv.height = 640; const cx = cv.getContext('2d');
+  const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace;
+  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 0.69), new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthTest: false }));
+  mesh.renderOrder = 10; mesh.visible = false; scene.add(mesh);
+  const rows = [];
+  const wrap = (t, x, y, w, lh, paint = true) => { const words = t.split(' '); let line = ''; for (const wd of words) { const tst = line ? line + ' ' + wd : wd; if (cx.measureText(tst).width > w && line) { if (paint) cx.fillText(line, x, y); y += lh; line = wd; } else line = tst; } if (paint) cx.fillText(line, x, y); return y + lh; };
+  return {
+    mesh, rows,
+    draw() {
+      cx.clearRect(0, 0, 1024, 640); cx.fillStyle = 'rgba(15,15,20,0.82)'; cx.beginPath(); cx.roundRect(0, 0, 1024, 640, 28); cx.fill();
+      cx.fillStyle = '#fff'; cx.font = '34px system-ui'; let y = 60;
+      y = wrap($('sub').innerText, 36, y, 950, 44) + 6; rows.length = 0;
+      cx.font = '30px system-ui';
+      currentChoices.forEach((c, i) => {
+        const yEnd = wrap(c.label, 48, y + 36, 920, 38, false), top = y, bot = yEnd - 18;
+        cx.fillStyle = 'rgba(43,108,176,0.55)'; cx.beginPath(); cx.roundRect(28, top, 968, bot - top, 12); cx.fill();
+        cx.fillStyle = '#fff'; wrap(c.label, 48, y + 36, 920, 38);
+        rows.push([top, bot, i]); y = bot + 12;
+      });
+      tex.needsUpdate = true;
+    },
+    place() { const d = new THREE.Vector3(); camera.getWorldDirection(d); d.y = 0; d.normalize(); const p = new THREE.Vector3(); camera.getWorldPosition(p);
+      mesh.position.copy(p).addScaledVector(d, 1.3); mesh.position.y = p.y - 0.35; mesh.lookAt(p.x, mesh.position.y, p.z); }
+  };
+})();
+// Auswahl in der Brille mit Controller oder Hand (Zeigen + Klick)
+const ray = new THREE.Raycaster();
+for (let i = 0; i < 2; i++) {
+  const ctl = renderer.xr.getController(i); rig.add(ctl);
+  ctl.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3(0, 0, -3)]), new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.5 })));
+  ctl.addEventListener('select', () => {
+    const m = new THREE.Matrix4().extractRotation(ctl.matrixWorld);
+    ray.ray.origin.setFromMatrixPosition(ctl.matrixWorld); ray.ray.direction.set(0, 0, -1).applyMatrix4(m);
+    const hit = ray.intersectObject(panel.mesh)[0]; if (!hit) return;
+    const py = (1 - hit.uv.y) * 640; const row = panel.rows.find(r => py >= r[0] && py <= r[1]); if (row) pick(row[2]);
+  });
+}
+renderer.xr.addEventListener('sessionstart', () => { panel.mesh.visible = true; panel.place(); engelVideo?.play().catch(() => {}); });
+renderer.xr.addEventListener('sessionend', () => { panel.mesh.visible = false; });
+
+// ---------- Kamera und Raumwechsel ----------
+let yaw = 0, pitch = 0, eye = STAND, drag = null, current = null;
+addEventListener('pointerdown', e => { if (e.target === renderer.domElement) drag = [e.clientX, e.clientY]; engelVideo?.play().catch(() => {}); });
+addEventListener('pointerup', () => drag = null);
+addEventListener('pointermove', e => { if (!drag) return; yaw += (e.clientX - drag[0]) * 0.004; pitch += (e.clientY - drag[1]) * 0.004; pitch = Math.max(-1.3, Math.min(1.3, pitch)); drag = [e.clientX, e.clientY]; });
+const fade = new THREE.Mesh(new THREE.SphereGeometry(0.3, 16, 8), new THREE.MeshBasicMaterial({ color: 0, transparent: true, opacity: 0, side: THREE.BackSide, depthTest: false }));
+fade.renderOrder = 20; camera.add(fade);
+async function fadeTo(o) { const s = fade.material.opacity; for (let t = 0; t <= 1; t += 0.08) { fade.material.opacity = s + (o - s) * t; await sleep(25); } fade.material.opacity = o; }
+async function goRoom(name, lookU, h) {
+  await fadeTo(1);
+  const room = await buildRoom(name);
+  if (name === 'wohnzimmer' && !engelVideo) await addEngel(room);
+  if (current) scene.remove(current.group);
+  scene.add(room.group); current = room;
+  eye = h; room.group.position.y = h;
+  yaw = (lookU - 0.5) * 2 * Math.PI; pitch = 0.05;
+  if (renderer.xr.isPresenting) panel.place();
+  await fadeTo(0);
+}
+let last = performance.now();
+renderer.setAnimationLoop(() => {
+  const now = performance.now(), dt = (now - last) / 1000; last = now;
+  if (!renderer.xr.isPresenting) { camera.position.set(0, eye, 0); camera.rotation.set(-pitch, -yaw, 0, 'YXZ'); }
+  trackGaze(dt);
+  renderer.render(scene, camera);
+});
+
+// ---------- Geschichte ----------
+const log = [];
+const MOODS = ['gut', 'müde', 'misstrauisch'];
+let mood = new URLSearchParams(location.search).get('tagesform') || MOODS[Math.floor(Math.random() * 3)];
+const byMood = o => o[mood] || o.gut;
+
+const FLUR_DINGE = [
+  { id: 'laeufer', u: 0.44, v: 0.915, r: 10, name: 'Läufer mit umgeschlagener Ecke' },
+  { id: 'pantoffeln', u: 0.491, v: 0.79, r: 8, name: 'Pantoffeln mitten im Weg' },
+  { id: 'lampe', u: 0.51, v: 0.19, r: 9, name: 'Deckenlampe ohne Glühbirne' },
+  { id: 'kabel', u: 0.68, v: 0.83, r: 9, name: 'Telefonkabel quer über den Boden' },
+  { id: 'telefon', u: 0.615, v: 0.61, r: 8, name: 'Großtastentelefon auf dem Tischchen' },
+  { id: 'post', u: 0.773, v: 0.52, r: 8, name: 'Stapel Post und Schlüsselbrett' },
+  { id: 'schwelle', u: 0.374, v: 0.76, r: 9, name: 'Hohe Türschwelle zum Bad' }
+];
+const WZ_DINGE = [
+  { id: 'foto', u: 0.576, v: 0.44, r: 7, name: 'Foto: junge Frau an der Nähmaschine' },
+  { id: 'tassen', u: 0.522, v: 0.717, r: 8, name: 'Zwei Tassen mit altem Kaffee, Kuchen unberührt' }
+];
+
+async function szene0() {
+  await goRoom('auto', 0.5, STAND);
+  note('Regen auf der Windschutzscheibe. Ihr steht vor dem Haus von Frau Engel.');
+  await sleep(2500);
+  await say('jana', 'Erster Besuch bei Frau Engel. Ihre Tochter hat uns bestellt, nicht sie selbst. Ich warte erst mal hier, du schaffst das. Wenn was ist, ruf mich an.');
+  await ownWords('Bevor du aussteigst: Stell dir vor, ein fremder Mensch soll dich waschen. Was wäre dir wichtig?');
+  await choose([{ label: 'Aussteigen und zur Wohnung gehen' }]);
+}
+async function szene1() {
+  await goRoom('treppenhaus', 0.17, STAND);
+  note('2. Stock. Vor dir die Wohnungstür, auf dem Schild steht „Engel“. Du klingelst.');
+  await sleep(1800); bell();
+  await sleep(4000); note('Stille.');
+  await sleep(5000);
+  const c = await choose([{ label: 'Weiter warten', k: 'warten' }, { label: 'Noch einmal klingeln', k: 'klingeln' }, { label: 'Mit dem Schlüssel aufschließen', k: 'auf' }]);
+  if (c.k === 'warten') { note('Von drinnen langsame Schritte und das Rattern eines Rollators. Die Tür geht auf.'); await sleep(3500); }
+  if (c.k === 'klingeln') { bell(); await sleep(1500); await say('engel', 'Ja doch, ich komm ja!'); note('Die Tür geht auf.'); await sleep(1500); }
+  if (c.k === 'auf') { note('Du schließt auf. Frau Engel steht direkt hinter der Tür im Morgenmantel und zuckt zusammen.'); await sleep(2500); await say('engel', 'Huch! Wer sind Sie denn? Wie kommen Sie hier rein?'); mood = 'misstrauisch'; }
+}
+async function szene2() {
+  note('Frau Engel im Morgenmantel, eine Hand am Rollator, die andere am Türrahmen.');
+  await sleep(1500);
+  if (mood !== 'misstrauisch') await say('engel', byMood({ gut: 'Ja? Wer sind Sie?', müde: 'Ja … wer ist da?' }));
+  await ownWords('Was sagst du zur Begrüßung? Schreib deinen Satz auf, dann wähle, was am nächsten dran ist.');
+  const c = await choose([
+    { label: '„Guten Morgen, Frau Engel. Ich bin … vom Pflegedienst Sonnenhof. Ihre Tochter hat uns gebeten, Sie heute beim Waschen zu unterstützen. Darf ich reinkommen?“', k: 'a' },
+    { label: '„Hallo, ich bin die Neue vom Pflegedienst, zum Waschen!“', k: 'b' },
+    { label: '„Guten Morgen, Frau Engel, wir gehen dann gleich mal ins Bad, ja?“', k: 'c' }]);
+  if (c.k === 'a') await say('engel', byMood({ gut: 'Ach so, die Sabine … na, dann kommen Sie halt rein.', müde: 'Ach, die Sabine. Ja … kommen Sie rein.', misstrauisch: 'Vom Pflegedienst … Haben Sie einen Ausweis? … Na gut. Kommen Sie.' }));
+  if (c.k === 'b') { await say('engel', 'Zum Waschen? Ich bin doch nicht schmutzig.'); if (mood === 'gut') mood = 'misstrauisch'; }
+  if (c.k === 'c') { await say('engel', 'So schnell geht’s bei mir nicht.'); if (mood === 'gut') mood = 'müde'; }
+}
+async function szene3() {
+  await goRoom('flur', 0.5, STAND);
+  hotspots = FLUR_DINGE;
+  await say('engel', 'Kommen Sie, wir gehen ins Wohnzimmer. Ich bin nicht mehr so schnell.');
+  note('Frau Engel geht langsam voraus. Du hast Zeit, dich umzusehen.');
+  await sleep(35000);
+  hotspots = [];
+  await choose([{ label: 'Ins Wohnzimmer gehen' }]);
+}
+async function szene4() {
+  await goRoom('wohnzimmer', 0.389, SIT);
+  hotspots = WZ_DINGE;
+  engelVideo.play().catch(() => {});
+  await sleep(1500);
+  await say('engel', byMood({ gut: 'So. Setzen Sie sich doch. Wollen Sie einen Kaffee? … Wie heißen Sie noch mal?', müde: 'Setzen Sie sich. Ich hab heut Nacht kaum geschlafen. … Wie war Ihr Name?', misstrauisch: 'Setzen Sie sich da hin. … Wie heißen Sie noch mal?' }));
+  const c1 = await choose([
+    { label: 'Freundlich noch einmal den eigenen Namen sagen', k: 'a' },
+    { label: 'Freundlich den Namen sagen und auf das Foto mit der Nähmaschine zeigen: „Sind Sie das?“', k: 'foto', needs: 'foto' },
+    { label: '„Das hab ich Ihnen doch gerade gesagt.“', k: 'b' },
+    { label: 'Darüber hinweggehen', k: 'c' }]);
+  if (c1.k === 'a') await say('engel', 'Ach ja, richtig. Ich vergess das immer so schnell.');
+  if (c1.k === 'foto') { await say('engel', 'Ja, das bin ich! Vierzig Jahre war ich Schneiderin. Da hab ich noch alles selber gemacht.'); if (mood === 'misstrauisch') mood = 'gut'; }
+  if (c1.k === 'b') { await say('engel', '… Ja. Entschuldigung.'); note('Frau Engel wird still. Der Kanarienvogel hört auf zu zwitschern.'); mood = 'misstrauisch'; await sleep(2500); }
+  await ownWords('Wie sprichst du das Waschen an? Schreib deinen Satz auf.');
+  const c2 = await choose([
+    { label: 'Fragen, wie sie es gewohnt ist und wobei sie sich Hilfe wünscht', k: 'a' },
+    { label: '„Ihre Tochter möchte, dass wir Sie zweimal die Woche waschen.“', k: 'b' },
+    { label: '„Das geht ganz schnell, dann haben Sie’s hinter sich.“', k: 'c' }]);
+  if (c2.k === 'a') await say('engel', byMood({ gut: 'Also, ganz ehrlich: Ich wasch mich seit achtzig Jahren allein … na ja, den Rücken krieg ich nicht mehr hin. Und die Füße. Aber das Gesicht mach ich selber!', müde: 'Heute … eigentlich nur die Füße. Der Rest kann bis morgen warten.', misstrauisch: 'Ich kenn Sie ja gar nicht. … Vielleicht die Füße. Mehr nicht.' }));
+  if (c2.k === 'b') await say('engel', 'Die Sabine soll sich um ihren eigenen Kram kümmern.');
+  if (c2.k === 'c') await say('engel', 'Ich hab nichts hinter mich zu bringen.');
+  await sleep(800);
+  note('Das Telefon im Flur klingelt …');
+  await sleep(2500);
+}
+async function ende() {
+  hotspots = [];
+  const flur = FLUR_DINGE.map(d => `${seen.has(d.id) ? '✔' : '✗'} ${d.name}`).join('<br>');
+  sub(`<b>Ende des Testabschnitts.</b> Weiter geht es später mit dem Anruf der Tochter.<br><br>Im Flur hast du ${FLUR_DINGE.filter(d => seen.has(d.id)).length} von ${FLUR_DINGE.length} Dingen länger angesehen:<br>${flur}<br><br>Tagesform von Frau Engel am Ende: ${mood}`);
+  await choose([{ label: 'Noch einmal von vorn (andere Tagesform)', k: 'neu' }]);
+  location.search = '';
+}
+
+$('startBtn').onclick = async () => {
+  $('start').remove(); actx = new AudioContext();
+  try { await szene0(); await szene1(); await szene2(); await szene3(); await szene4(); await ende(); }
+  catch (e) { sub('Fehler: ' + e.message); console.error(e); }
+};
+</script>
+</body>
+</html>
