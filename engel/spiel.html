@@ -678,7 +678,7 @@ async function szene8() {
 async function szene9() {
   hotspots = [];
   const bad = await buildRoom('bad'); if (bad.engel) bad.engel.visible = false;
-  await goRoom('bad', 0.47, SIT, 0.15);
+  await goRoom('bad', 0.47, 1.25, 0.05);
   note('Jetzt bist du Frau Engel. Du sitzt auf dem Hocker im Bad und wartest.');
   const strasse = playTon('sfx_strasse', 0.45, true);
   await sleep(5000);
