@@ -97,7 +97,7 @@ const idx = [];
 for (let j = 0; j < SY; j++) for (let i = 0; i < SX; i++) {
   const a = j * (SX + 1) + i, b = a + 1, c = a + SX + 1, e = c + 1;
   const m = Math.min(dist[a], dist[b], dist[c], dist[e]), M = Math.max(dist[a], dist[b], dist[c], dist[e]);
-  if (M / m > 1.15) continue;
+  if (M / m > 1.35) continue;
   idx.push(a, b, c, b, e, c);
 }
 const geo = new THREE.BufferGeometry();
@@ -107,7 +107,7 @@ geo.setIndex(idx);
 const tex = new THREE.Texture(photo); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 8; tex.needsUpdate = true;
 scene.add(new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ map: tex, side: THREE.DoubleSide })));
 // Hintergrund hinter Lücken: dieselbe Kugel weit weg, leicht abgedunkelt
-const back = new THREE.Mesh(new THREE.SphereGeometry(FAR * 1.1, 64, 32), new THREE.MeshBasicMaterial({ map: tex, color: 0x888888, side: THREE.BackSide }));
+const back = new THREE.Mesh(new THREE.SphereGeometry(FAR * 1.1, 64, 32), new THREE.MeshBasicMaterial({ map: tex, side: THREE.BackSide }));
 back.scale.x = -1; back.rotation.y = -Math.PI / 2; back.position.y = EYE; scene.add(back);
 
 // Umsehen per Wischen, Kopf bewegen per Tasten
