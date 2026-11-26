@@ -25,7 +25,7 @@
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
 </head>
 <body>
-<div id="top"><span>Erster Besuch bei Frau Engel · Testabschnitt Szene 0–4</span><span>Bilder und Video KI-generiert · Stimmen vorläufig</span></div>
+<div id="top"><span>Erster Besuch bei Frau Engel · Testabschnitt Szene 0–5</span><span>Bilder, Video und Stimmen KI-generiert</span></div>
 <div id="start"><div>
   <h1>Erster Besuch bei Frau Engel</h1>
   Ambulanter Pflegedienst, Donnerstag, 9:12 Uhr. Du bist mit deiner Praxisanleiterin Jana unterwegs. Heute besuchst du zum ersten Mal Frau Hilde Engel, 84 Jahre.<br><br>
@@ -166,6 +166,16 @@ function trackGaze(dt) {
 
 // ---------- Ton ----------
 let actx;
+let ringTimer = null;
+function ringPhone() { // altes Telefon: zweimal schnell klingeln, Pause, wiederholen
+  actx = actx || new AudioContext();
+  const burst = () => { const t0 = actx.currentTime; for (let k = 0; k < 2; k++) { const o = actx.createOscillator(), m = actx.createOscillator(), g = actx.createGain(), mg = actx.createGain();
+    o.frequency.value = 900; m.frequency.value = 25; mg.gain.value = 300; m.connect(mg).connect(o.frequency); o.type = 'square';
+    const t = t0 + k * 0.55; g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.08, t + 0.02); g.gain.setValueAtTime(0.08, t + 0.4); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.45);
+    o.connect(g).connect(actx.destination); o.start(t); m.start(t); o.stop(t + 0.5); m.stop(t + 0.5); } };
+  burst(); ringTimer = setInterval(burst, 3000);
+}
+const stopRing = () => { clearInterval(ringTimer); ringTimer = null; };
 function bell() { // zweitoniger Gong
   actx = actx || new AudioContext();
   [[660, 0], [520, 0.45]].forEach(([f, t]) => { const o = actx.createOscillator(), g = actx.createGain(); o.frequency.value = f; o.type = 'sine';
@@ -357,7 +367,7 @@ renderer.setAnimationLoop(() => {
 // ---------- Geschichte ----------
 const log = [];
 const MOODS = ['gut', 'müde', 'misstrauisch'];
-let opened = false;
+let opened = false, waschWahl = null;
 let mood = new URLSearchParams(location.search).get('tagesform') || MOODS[Math.floor(Math.random() * 3)];
 const byMood = o => o[mood] || o.gut;
 const sayM = (who, texts, files) => say(who, byMood(texts), byMood(files));
@@ -480,18 +490,63 @@ async function szene4() {
     { label: 'Fragen, wie sie es gewohnt ist und wobei sie sich Hilfe wünscht', k: 'a' },
     { label: '„Ihre Tochter möchte, dass wir Sie zweimal die Woche waschen.“', k: 'b' },
     { label: '„Das geht ganz schnell, dann haben Sie’s hinter sich.“', k: 'c' }]);
+  waschWahl = c2.k;
   if (c2.k === 'a' && mood === 'gut') { await say('engel', 'Also, ganz ehrlich: Ich wasch mich seit achtzig Jahren allein. Ich brauch da niemanden. Das war die Idee meiner Tochter.', 'engel_allein'); await say('engel', 'Na ja … den Rücken krieg ich nicht mehr hin. Und die Füße auch nicht. Aber das Gesicht, das mach ich selber!', 'engel_ruecken'); }
   else if (c2.k === 'a') await sayM('engel', { müde: 'Heute … eigentlich nur die Füße. Der Rest kann bis morgen warten.', misstrauisch: 'Ich kenn Sie ja gar nicht. … Vielleicht die Füße. Mehr nicht.' }, { müde: 'engel_fuesse_muede', misstrauisch: 'engel_fuesse_misstr' });
   if (c2.k === 'b') await say('engel', 'Dann soll sich meine Tochter doch selber waschen lassen!', 'engel_tochter_wuetend');
   if (c2.k === 'c') await say('engel', 'Jetzt fangen Sie auch noch an wie meine Tochter.', 'engel_wie_tochter');
   await sleep(800);
-  note('Das Telefon im Flur klingelt …');
   await sleep(2500);
+}
+async function szene5() {
+  ringPhone();
+  await sleep(1500);
+  await say('engel', 'Das Telefon. Das ist bestimmt die Sabine. Gehen Sie mal ran, ich komm so schlecht hoch.', 'engel_telefon');
+  await choose([{ label: 'Aufstehen und im Flur ans Telefon gehen' }]);
+  await goRoom('flur', 0.615, STAND, 0.12); hotspots = [];
+  stopRing(); note('Du nimmst den Hörer ab.'); await sleep(1200);
+  await say('tochter', 'Hallo? Mama? … Ach, Sie sind vom Pflegedienst. Gut, dass ich Sie erreiche. Wie geht’s ihr denn? Hat sie sich waschen lassen? Sie ist in letzter Zeit so vergesslich, ich mach mir solche Sorgen.', 'tochter_hallo');
+  await ownWords('Was sagst du der Tochter?');
+  const t = await choose([
+    { label: '„Am Telefon darf ich Ihnen keine Auskunft geben. Ich hole Ihnen Ihre Mutter, dann kann sie selbst erzählen.“', k: 'a' },
+    { label: '„Ehrlich gesagt will sie sich nicht so gern waschen lassen, und Namen vergisst sie auch schnell.“', k: 'b' },
+    { label: '„Dazu kann ich nichts sagen. Bitte melden Sie sich bei unserer Pflegedienstleitung.“', k: 'c' }]);
+  if (t.k === 'a') { await say('tochter', 'Ja … verstehe. Dann geben Sie sie mir bitte mal.', 'tochter_ok'); log.push('Anruf der Tochter: keine Auskunft gegeben, an Frau Engel weitergegeben'); }
+  if (t.k === 'b') { await say('tochter', 'Was, sie will sich nicht waschen lassen? Wusste ich’s doch. Das geht so nicht weiter, ich ruf heute noch die Ärztin an!', 'tochter_aha');
+    await say('engel', 'Reden Sie da über mich?', 'engel_ueber_mi'); mood = 'misstrauisch'; seen.add('auskunft'); log.push('Anruf der Tochter: Auskunft über Frau Engel gegeben, ohne sie zu fragen'); }
+  if (t.k === 'c') { await say('tochter', 'Na gut. Dann ruf ich nachher bei Ihnen im Büro an.', 'tochter_buero'); log.push('Anruf der Tochter: keine Auskunft, an die Pflegedienstleitung verwiesen'); }
+  if (t.k !== 'c') {
+    note('Du hilfst Frau Engel aus dem Sessel und begleitest sie zum Telefon. Sie nimmt den Hörer.'); playTon('sfx_rollator', 0.6); await sleep(3500);
+    await say('engel', 'Ja, Sabine … ja, die ist da. … Ja. … Ja, ich weiß. … Tschüss.', 'engel_hoerer');
+    note('Ihr geht zusammen zurück ins Wohnzimmer.'); await sleep(2000);
+  }
+  await goRoom('wohnzimmer', 0.389, SIT, 0.28); hotspots = WZ_DINGE; engelVideo?.play().catch(() => {});
+  await sleep(800);
+}
+async function szene5b() {
+  const nein = mood === 'misstrauisch' || waschWahl === 'b' || waschWahl === 'c';
+  if (!nein) return;
+  await say('engel', 'Heute lass ich mich nicht waschen. Fertig.', 'engel_nein');
+  await ownWords('Frau Engel sagt Nein. Was tust du jetzt?');
+  const c = await choose([
+    { label: '„Das muss aber heute sein. Ihre Tochter hat uns extra dafür bestellt.“', k: 'druck' },
+    { label: 'Ihr Nein ernst nehmen, nicht weiter drängen und Jana anrufen', k: 'jana' },
+    { label: '„Gut, dann gehe ich wieder.“ Und aufstehen.', k: 'gehen' }]);
+  if (c.k === 'druck') { await say('engel', 'Dann soll sich meine Tochter doch selber waschen lassen!', 'engel_tochter_wuetend'); log.push('Nein von Frau Engel: unter Druck gesetzt'); note('Frau Engel dreht sich weg. Du rufst Jana an.'); await sleep(2500); }
+  if (c.k === 'gehen') { log.push('Nein von Frau Engel: wollte gehen, ohne jemandem Bescheid zu geben'); note('Im Flur fällt dir ein: Jana muss Bescheid wissen. Einfach gehen geht nicht. Du rufst sie an.'); await sleep(3000); }
+  if (c.k === 'jana') { log.push('Nein von Frau Engel: respektiert und Jana informiert'); note('Du sagst Frau Engel, dass du kurz deine Kollegin anrufst.'); await sleep(2000); }
+  if (c.k !== 'druck') await say('jana', 'Okay. Gut, dass du anrufst und nichts erzwingst. Ich komm hoch.', 'jana_telefon');
+  await sleep(2500); bell(); await sleep(2000);
+  note('Jana kommt herein, begrüßt Frau Engel und setzt sich zu euch.'); await sleep(2500);
+  await say('jana', 'Moment. Wir dürfen ihr Nein respektieren. Aber haben wir gefragt, was sie braucht?', 'jana_nein');
+  await ownWords('Was fragst du Frau Engel jetzt?');
+  await say('engel', 'Na ja … den Rücken krieg ich nicht mehr hin. Und die Füße auch nicht. Aber das Gesicht, das mach ich selber!', 'engel_ruecken');
+  mood = 'müde';
 }
 async function ende() {
   hotspots = [];
   const flur = FLUR_DINGE.map(d => `${seen.has(d.id) ? '✔' : '✗'} ${d.name}`).join('<br>');
-  sub(`<b>Ende des Testabschnitts.</b> Weiter geht es später mit dem Anruf der Tochter.<br><br>Im Flur hast du ${FLUR_DINGE.filter(d => seen.has(d.id)).length} von ${FLUR_DINGE.length} Dingen länger angesehen:<br>${flur}${seen.has('bad_ungefragt') ? '<br><br>Du hast allein ins Bad geschaut, ohne Frau Engel zu fragen. Es ist ihre Wohnung: Wie hätte sie das wohl empfunden?' : ''}<br><br>Tagesform von Frau Engel am Ende: ${mood}`);
+  sub(`<b>Ende des Testabschnitts.</b> Weiter geht es später mit dem Weg ins Bad.<br><br>Im Flur hast du ${FLUR_DINGE.filter(d => seen.has(d.id)).length} von ${FLUR_DINGE.length} Dingen länger angesehen:<br>${flur}${seen.has('bad_ungefragt') ? '<br><br>Du hast allein ins Bad geschaut, ohne Frau Engel zu fragen. Es ist ihre Wohnung: Wie hätte sie das wohl empfunden?' : ''}${log.length ? '<br><br><b>Deine Entscheidungen:</b><br>' + log.join('<br>') : ''}<br><br>Tagesform von Frau Engel am Ende: ${mood}`);
   if (!renderer.xr.isPresenting && recordings.length) {
     const box = document.createElement('div'); box.style.cssText = 'max-width:900px;font-size:15px;line-height:1.5;text-align:left';
     box.innerHTML = '<b>Deine eigenen Worte:</b>';
@@ -505,7 +560,7 @@ async function ende() {
 $('startBtn').onclick = async () => {
   $('start').remove(); actx = new AudioContext();
   const ab = +(new URLSearchParams(location.search).get('szene') || 0);
-  const ablauf = [szene0, szene1, szene2, szene3, szene4, ende];
+  const ablauf = [szene0, szene1, szene2, szene3, szene4, szene5, szene5b, ende];
   try { for (const f of ablauf.slice(ab)) await f(); }
   catch (e) { sub('Fehler: ' + e.message); console.error(e); }
 };
