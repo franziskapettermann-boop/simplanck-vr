@@ -575,18 +575,17 @@ async function szene6() {
 const BAD_DINGE = [
   { id: 'fenster', u: 0.33, v: 0.30, r: 9, name: 'Gekipptes Fenster, es zieht' },
   { id: 'notruf', u: 0.66, v: 0.61, r: 7, name: 'Notrufarmband auf der Waschmaschine' },
-  { id: 'hocker', u: 0.43, v: 0.78, r: 8, name: 'Hocker zum Hinsetzen' },
   { id: 'matte', u: 0.42, v: 0.92, r: 10, name: 'Badematte ohne Rutschschutz' },
   { id: 'badtuer', u: 0.80, v: 0.50, r: 9, name: 'Offene Badezimmertür' }
 ];
 async function szene7() {
   // Im Bad: Intimsphäre, Kälte, Selbstständigkeit, Notruf
   const bad = await buildRoom('bad');
-  if (!bad.engel) bad.engel = await addFigur(bad, { u: qn('bu', 0.45), v: qn('bv', 0.84), groesse: qn('bg', 1.7), src: 'figur/engel_tuer_alpha.mp4' });
+  if (!bad.engel) bad.engel = await addFigur(bad, { u: qn('bu', 0.43), v: qn('bv', 0.84), groesse: qn('bg', 1.4), src: 'figur/engel_bad_alpha.mp4' });
   await goRoom('bad', 0.5, STAND, 0.12); hotspots = BAD_DINGE; bad.engel.play();
   const strasse = playTon('sfx_strasse', 0.35, true);
   let fensterZu = false, tuerZu = false, warm = false;
-  note('Frau Engel steht am Waschbecken. Durchs gekippte Fenster zieht es, draußen rauscht der Verkehr.');
+  note('Frau Engel sitzt auf dem Hocker am Waschbecken. Den Bademantel hat sie ausgezogen, ein Handtuch liegt über ihren Schultern. Durchs gekippte Fenster zieht es, draußen rauscht der Verkehr.');
   await sleep(6000);
   await say('engel', 'Muss die Tür offen sein?', 'engel_tuer_offen');
   const t = await choose([
@@ -598,7 +597,6 @@ async function szene7() {
   await ownWords('Bevor es losgeht: Was bereitest du vor? Sag es laut.');
   const vor = [
     { label: 'Das Fenster schließen', k: 'fenster', needs: 'fenster' },
-    { label: 'Den Hocker vors Waschbecken stellen, damit sie sitzen kann', k: 'hocker', needs: 'hocker' },
     { label: 'Handtücher auf die Heizung legen, damit sie warm sind', k: 'warm' },
     { label: 'Die rutschige Badematte zur Seite legen', k: 'matte', needs: 'matte' },
     { label: 'Fertig vorbereitet, jetzt anfangen', k: 'los' }];
@@ -607,7 +605,6 @@ async function szene7() {
     if (c.k === 'los') break;
     c.done = true; log.push('Bad vorbereitet: ' + c.label);
     if (c.k === 'fenster') { fensterZu = true; strasse.volume = 0.06; note('Das Fenster ist zu. Es wird ruhiger.'); }
-    if (c.k === 'hocker') note('Frau Engel setzt sich. Sie wirkt erleichtert.');
     if (c.k === 'warm') { warm = true; note('Die Handtücher liegen auf der Heizung.'); }
     if (c.k === 'matte') note('Die Matte liegt zur Seite. Der Boden ist trocken.');
   }
