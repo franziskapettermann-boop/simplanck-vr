@@ -212,7 +212,7 @@ for (let i = 0; i < 2; i++) {
     const py = (1 - hit.uv.y) * 640; const row = panel.rows.find(r => py >= r[0] && py <= r[1]); if (row) pick(row[2]);
   });
 }
-renderer.xr.addEventListener('sessionstart', () => { panel.mesh.visible = true; panel.place(); engelVideo?.play().catch(() => {}); });
+renderer.xr.addEventListener('sessionstart', () => { setTimeout(placeRoom, 300); panel.mesh.visible = true; panel.place(); engelVideo?.play().catch(() => {}); });
 renderer.xr.addEventListener('sessionend', () => { panel.mesh.visible = false; });
 
 // ---------- Kamera und Raumwechsel ----------
@@ -223,13 +223,21 @@ addEventListener('pointermove', e => { if (!drag) return; yaw += (e.clientX - dr
 const fade = new THREE.Mesh(new THREE.SphereGeometry(0.3, 16, 8), new THREE.MeshBasicMaterial({ color: 0, transparent: true, opacity: 0, side: THREE.BackSide, depthTest: false }));
 fade.renderOrder = 20; camera.add(fade);
 async function fadeTo(o) { const s = fade.material.opacity; for (let t = 0; t <= 1; t += 0.08) { fade.material.opacity = s + (o - s) * t; await sleep(25); } fade.material.opacity = o; }
+function placeRoom() {
+  if (!current) return;
+  if (renderer.xr.isPresenting) {
+    // In der Brille: egal ob man steht oder sitzt, die Augen landen auf der Höhe, die die Szene verlangt
+    const p = new THREE.Vector3(); renderer.xr.getCamera().getWorldPosition(p);
+    current.group.position.y = p.y + (STAND - eye);
+  } else current.group.position.y = STAND;
+}
 async function goRoom(name, lookU, h, lookDown = 0.05) {
   await fadeTo(1);
   const room = await buildRoom(name);
   if (name === 'wohnzimmer' && !engelVideo) await addEngel(room);
   if (current) scene.remove(current.group);
   scene.add(room.group); current = room;
-  eye = h; room.group.position.y = h;
+  eye = h; placeRoom();
   yaw = (lookU - 0.5) * 2 * Math.PI; pitch = lookDown;
   if (renderer.xr.isPresenting) panel.place();
   await fadeTo(0);
@@ -305,6 +313,8 @@ async function szene3() {
   await choose([{ label: 'Ins Wohnzimmer gehen' }]);
 }
 async function szene4() {
+  note('Frau Engel zeigt auf einen Stuhl gegenüber ihrem Sessel. Du setzt dich.');
+  await sleep(2200);
   await goRoom('wohnzimmer', 0.389, SIT, 0.28);
   hotspots = WZ_DINGE;
   engelVideo.play().catch(() => {});
