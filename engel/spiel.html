@@ -166,11 +166,34 @@ function choose(list) {
   return new Promise(r => choiceResolve = r);
 }
 function pick(i) { const c = currentChoices[i]; if (!c || !choiceResolve) return; $('choices').innerHTML = ''; currentChoices = []; const r = choiceResolve; choiceResolve = null; panel.draw(); log.push(['Wahl', c.label]); r(c); }
-function ownWords(prompt) {
+// Eigene Worte: laut sprechen, wird nur auf dem Gerät aufgenommen. Schreiben nur als Ausweichmöglichkeit.
+let micStream = null, micTried = false;
+const recordings = [];
+async function getMic() {
+  if (micTried) return micStream; micTried = true;
+  try { micStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } }); } catch { micStream = null; }
+  return micStream;
+}
+function typeWords(prompt) {
   sub(`<i>${prompt}</i>`); $('own').style.display = 'flex'; $('ownText').value = ''; $('ownText').focus();
-  const vr = renderer.xr.isPresenting;
-  if (vr) return choose([{ label: 'Ich habe es laut ausgesprochen. Weiter.' }]).then(() => { $('own').style.display = 'none'; log.push(['Eigene Worte', '(laut gesprochen)']); });
-  return new Promise(r => $('ownOk').onclick = () => { $('own').style.display = 'none'; log.push(['Eigene Worte', $('ownText').value.trim() || '(leer)']); r($('ownText').value.trim()); });
+  return new Promise(r => $('ownOk').onclick = () => { $('own').style.display = 'none'; const t = $('ownText').value.trim(); log.push(['Eigene Worte', t || '(leer)']); recordings.push({ prompt, text: t }); r(t); });
+}
+async function ownWords(prompt) {
+  const vr = renderer.xr.isPresenting, mic = await getMic();
+  if (!mic) {
+    if (vr) { sub(`<i>${prompt}</i> Sprich es laut aus.`); await choose([{ label: 'Ich habe es laut gesagt. Weiter.' }]); return; }
+    return typeWords(prompt);
+  }
+  const rec = new MediaRecorder(mic), parts = [];
+  rec.ondataavailable = e => parts.push(e.data);
+  const stopped = new Promise(r => rec.onstop = r);
+  rec.start();
+  sub(`<i>${prompt}</i><br>🎤 <b>Sprich jetzt laut.</b> Die Aufnahme bleibt auf diesem Gerät.`);
+  const c = await choose(vr ? [{ label: 'Fertig gesprochen', k: 'ok' }] : [{ label: 'Fertig gesprochen', k: 'ok' }, { label: 'Lieber schreiben', k: 'tipp' }]);
+  rec.stop(); await stopped;
+  if (c.k === 'tipp') return typeWords(prompt);
+  recordings.push({ prompt, audio: URL.createObjectURL(new Blob(parts, { type: rec.mimeType })) });
+  log.push(['Eigene Worte', '(gesprochen)']);
 }
 
 // Panel für die Brille: Untertitel und Antworten auf einer Tafel
@@ -294,7 +317,7 @@ async function szene2() {
   note('Frau Engel im Morgenmantel, eine Hand am Rollator, die andere am Türrahmen.');
   await sleep(1500);
   if (!opened) await say('engel', byMood({ gut: 'Ja? Wer sind Sie?', müde: 'Ja … wer ist da?', misstrauisch: 'Ja? … Wer sind Sie? Ich kauf nichts.' }));
-  await ownWords('Was sagst du zur Begrüßung? Schreib deinen Satz auf, dann wähle, was am nächsten dran ist.');
+  await ownWords('Was sagst du zur Begrüßung? Danach wählst du, was am nächsten dran ist.');
   const c = await choose([
     { label: '„Guten Morgen, Frau Engel. Ich bin … vom Pflegedienst Sonnenhof. Ihre Tochter hat uns gebeten, Sie heute beim Waschen zu unterstützen. Darf ich reinkommen?“', k: 'a' },
     { label: '„Hallo, ich bin die Neue vom Pflegedienst, zum Waschen!“', k: 'b' },
@@ -302,13 +325,18 @@ async function szene2() {
   if (c.k === 'a') await say('engel', byMood({ gut: 'Ach so, die Sabine … na, dann kommen Sie halt rein.', müde: 'Ach, die Sabine. Ja … kommen Sie rein.', misstrauisch: 'Vom Pflegedienst … Haben Sie einen Ausweis? … Na gut. Kommen Sie.' }));
   if (c.k === 'b') { await say('engel', 'Zum Waschen? Ich bin doch nicht schmutzig.'); if (mood === 'gut') mood = 'misstrauisch'; }
   if (c.k === 'c') { await say('engel', 'So schnell geht’s bei mir nicht.'); if (mood === 'gut') mood = 'müde'; }
+  await say('engel', byMood({ gut: 'Kommen Sie rein, es zieht. Die Schuhe können Sie anlassen, ich hab eh nicht geputzt.', müde: 'Kommen Sie halt rein. Machen Sie die Tür zu, es zieht.', misstrauisch: 'Machen Sie die Tür hinter sich zu.' }));
 }
 async function szene3() {
   await goRoom('flur', 0.5, STAND);
   hotspots = FLUR_DINGE;
   await say('engel', 'Kommen Sie, wir gehen ins Wohnzimmer. Ich bin nicht mehr so schnell.');
   note('Frau Engel geht langsam voraus. Du hast Zeit, dich umzusehen.');
-  await sleep(35000);
+  await sleep(7000);
+  await say('engel', byMood({ gut: 'Die Sabine meint ja, ich schaff das nicht mehr allein. Dabei mach ich das hier seit zweiundfünfzig Jahren.', müde: 'Heut ist wieder so ein Tag … alles geht langsam.', misstrauisch: 'Die Sabine hat Sie geschickt, gell? Die macht sich immer gleich Sorgen.' }));
+  await sleep(9000);
+  await say('engel', byMood({ gut: 'Passen Sie auf, hier ist es ein bisschen dunkel. Die Lampe macht’s nicht mehr.', müde: 'Das Licht hier … das muss mal einer richten.', misstrauisch: 'Hier vorne rechts. Nicht in die Küche.' }));
+  await sleep(12000);
   hotspots = [];
   await choose([{ label: 'Ins Wohnzimmer gehen' }]);
 }
@@ -328,7 +356,8 @@ async function szene4() {
   if (c1.k === 'a') await say('engel', 'Ach ja, richtig. Ich vergess das immer so schnell.');
   if (c1.k === 'foto') { await say('engel', 'Ja, das bin ich! Vierzig Jahre war ich Schneiderin. Da hab ich noch alles selber gemacht.'); if (mood === 'misstrauisch') mood = 'gut'; }
   if (c1.k === 'b') { await say('engel', '… Ja. Entschuldigung.'); note('Frau Engel wird still. Der Kanarienvogel hört auf zu zwitschern.'); mood = 'misstrauisch'; await sleep(2500); }
-  await ownWords('Wie sprichst du das Waschen an? Schreib deinen Satz auf.');
+  await say('engel', byMood({ gut: 'Das da oben ist der Willi. Der singt, wenn’s ruhig ist. Mein Mann hat ihn mir noch geschenkt … also, den Vorgänger.', müde: 'Der Willi ist heut auch so still.', misstrauisch: 'Das ist der Willi. Den fasst keiner an.' }));
+  await ownWords('Wie sprichst du das Waschen an?');
   const c2 = await choose([
     { label: 'Fragen, wie sie es gewohnt ist und wobei sie sich Hilfe wünscht', k: 'a' },
     { label: '„Ihre Tochter möchte, dass wir Sie zweimal die Woche waschen.“', k: 'b' },
@@ -344,6 +373,12 @@ async function ende() {
   hotspots = [];
   const flur = FLUR_DINGE.map(d => `${seen.has(d.id) ? '✔' : '✗'} ${d.name}`).join('<br>');
   sub(`<b>Ende des Testabschnitts.</b> Weiter geht es später mit dem Anruf der Tochter.<br><br>Im Flur hast du ${FLUR_DINGE.filter(d => seen.has(d.id)).length} von ${FLUR_DINGE.length} Dingen länger angesehen:<br>${flur}<br><br>Tagesform von Frau Engel am Ende: ${mood}`);
+  if (!renderer.xr.isPresenting && recordings.length) {
+    const box = document.createElement('div'); box.style.cssText = 'max-width:900px;font-size:15px;line-height:1.5;text-align:left';
+    box.innerHTML = '<b>Deine eigenen Worte:</b>';
+    recordings.forEach(r => { const p = document.createElement('div'); p.innerHTML = `<i>${r.prompt}</i><br>`; if (r.audio) { const a = document.createElement('audio'); a.controls = true; a.src = r.audio; p.appendChild(a); } else p.innerHTML += '„' + (r.text || '–') + '“'; box.appendChild(p); });
+    $('sub').after(box);
+  }
   await choose([{ label: 'Noch einmal von vorn (andere Tagesform)', k: 'neu' }]);
   location.search = '';
 }
