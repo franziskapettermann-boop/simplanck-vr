@@ -25,7 +25,7 @@
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
 </head>
 <body>
-<div id="top"><span>Erster Besuch bei Frau Engel · Testabschnitt Szene 0–7</span><span>Bilder, Video und Stimmen KI-generiert</span></div>
+<div id="top"><span>Erster Besuch bei Frau Engel</span><span>Bilder, Video und Stimmen KI-generiert</span></div>
 <div id="start"><div>
   <h1>Erster Besuch bei Frau Engel</h1>
   Ambulanter Pflegedienst, Donnerstag, 9:12 Uhr. Du bist mit deiner Praxisanleiterin Jana unterwegs. Heute besuchst du zum ersten Mal Frau Hilde Engel, 84 Jahre.<br><br>
@@ -208,7 +208,7 @@ function bell() { // zweitoniger Gong
     o.connect(g).connect(actx.destination); o.start(actx.currentTime + t); o.stop(actx.currentTime + t + 1.3); });
 }
 const VOICES = { engel: { rate: 0.82, pitch: 0.85 }, jana: { rate: 1.0, pitch: 1.1 }, tochter: { rate: 1.05, pitch: 1.0 } };
-const NAMES = { engel: 'Frau Engel', jana: 'Jana', tochter: 'Tochter' };
+const NAMES = { engel: 'Frau Engel', jana: 'Jana', tochter: 'Tochter', pflege: 'Pflegekraft' };
 let deVoice = null;
 speechSynthesis.onvoiceschanged = () => { deVoice = speechSynthesis.getVoices().find(v => v.lang.startsWith('de')) || null; };
 // Echte Aufnahmen (ElevenLabs) liegen in ton/<name>.mp3; ohne Datei spricht die Browserstimme
@@ -645,10 +645,53 @@ async function szene7() {
   if (n.k === 'liegen') { note('Das Armband bleibt auf der Waschmaschine. Wenn Frau Engel heute stürzt, kann sie keine Hilfe rufen.'); log.push('Notruf: liegen gelassen, Sturzrisiko ohne Hilferuf'); await sleep(3500); }
   await sleep(800);
 }
+async function szene8() {
+  hotspots = [];
+  note('Du verabschiedest dich von Frau Engel und gehst zurück zum Auto.'); await sleep(2500);
+  await goRoom('auto', 0.5, STAND);
+  const motor = playTon('sfx_auto', 0.3, true);
+  await say('jana', 'Und? Erzähl mal. Was gebe ich ans Team weiter?', 'jana_erzaehl');
+  await ownWords('Erzähl Jana in zwei, drei Sätzen, wie der Besuch war.');
+  const notrufOk = log.includes('Notruf: erklärt, gefragt und mit Einverständnis angelegt');
+  const items = [
+    { k: 'r1', ok: true, t: 'Stolperfallen: Läufer, Kabel, Schwelle, dunkler Flur' },
+    { k: 'w1', ok: false, t: 'Frau Engel ist dement.' },
+    { k: 'r2', ok: true, t: 'Sie hat noch einmal nach meinem Namen gefragt' },
+    { k: 'r3', ok: true, t: notrufOk ? 'Notrufarmband lag im Bad, trägt es jetzt wieder' : 'Notrufarmband lag im Bad, trägt es noch nicht' },
+    { k: 'w2', ok: false, t: 'Die Wohnung ist unordentlich.' },
+    { k: 'r4', ok: true, t: 'Wollte das Gesicht selbst waschen, Hilfe bei Rücken und Füßen' }
+  ];
+  const an = new Set();
+  for (;;) {
+    sub('Was gibst du an Jana weiter? Tippe alles an, was passt, dann „Fertig“.');
+    const c = await choose([...items.map(i => ({ label: (an.has(i.k) ? '● ' : '○ ') + i.t, k: i.k })), { label: 'Fertig', k: 'fertig' }]);
+    if (c.k !== 'fertig') { an.has(c.k) ? an.delete(c.k) : an.add(c.k); continue; }
+    if (an.has('w1')) { an.delete('w1'); log.push('Übergabe: „dement“ gesagt, statt zu beschreiben'); await say('jana', 'Moment. Was hast du gesehen und gehört? Eine Diagnose stellt die Ärztin. Und waschen hat sie sich ja lassen.', 'jana_diagnose'); continue; }
+    if (an.has('w2')) { an.delete('w2'); log.push('Übergabe: Wohnung als „unordentlich“ bewertet'); note('„Unordentlich“ ist eine Bewertung. Beschreib lieber, was du gesehen hast und was gefährlich werden kann.'); await sleep(4500); continue; }
+    if (items.filter(i => i.ok && an.has(i.k)).length < 3) { note('Da fehlt noch etwas. Denk an den Flur, an das Gespräch und an das Bad.'); await sleep(3500); continue; }
+    break;
+  }
+  log.push('Übergabe an Jana: ' + items.filter(i => an.has(i.k)).map(i => i.t).join('; '));
+  await say('jana', 'Gut beobachtet. Die Stolperfallen sprechen wir beim nächsten Mal mit ihr und der Tochter an. Und das mit dem Namen schreibe ich in die Doku.', 'jana_gut');
+  await sleep(800); motor.pause();
+}
+async function szene9() {
+  hotspots = [];
+  const bad = await buildRoom('bad'); if (bad.engel) bad.engel.visible = false;
+  await goRoom('bad', 0.47, SIT, 0.15);
+  note('Jetzt bist du Frau Engel. Du sitzt auf dem Hocker im Bad und wartest.');
+  const strasse = playTon('sfx_strasse', 0.45, true);
+  await sleep(5000);
+  playTon('sfx_badtuer', 0.8); await sleep(900);
+  await say('pflege', 'Morgen! So, dann machen wir Sie mal frei, ich hab nicht viel Zeit.', 'pflege_hektisch');
+  await sleep(1500);
+  await ownWords('Wie fühlt sich das an? Was war bei deinem Besuch anders?');
+  strasse.pause(); if (bad.engel) bad.engel.visible = true;
+}
 async function ende() {
   hotspots = [];
   const flur = FLUR_DINGE.map(d => `${seen.has(d.id) ? '✔' : '✗'} ${d.name}`).join('<br>');
-  sub(`<b>Ende des Testabschnitts.</b> Weiter geht es später mit der Nachbesprechung im Auto.<br><br>Im Flur hast du ${FLUR_DINGE.filter(d => seen.has(d.id)).length} von ${FLUR_DINGE.length} Dingen länger angesehen:<br>${flur}<br><br>Im Bad: ${BAD_DINGE.filter(d => seen.has(d.id)).length} von ${BAD_DINGE.length}:<br>${BAD_DINGE.map(d => `${seen.has(d.id) ? '✔' : '✗'} ${d.name}`).join('<br>')}${seen.has('bad_ungefragt') ? '<br><br>Du hast allein ins Bad geschaut, ohne Frau Engel zu fragen. Es ist ihre Wohnung: Wie hätte sie das wohl empfunden?' : ''}${log.filter(x => typeof x === 'string').length ? '<br><br><b>Deine Entscheidungen:</b><br>' + log.filter(x => typeof x === 'string').join('<br>') : ''}<br><br>Tagesform von Frau Engel am Ende: ${mood}`);
+  sub(`<b>Ende.</b> Nimm die Brille ab. Die Auswertung machst du danach in SIMPlanck.<br><br>Im Flur hast du ${FLUR_DINGE.filter(d => seen.has(d.id)).length} von ${FLUR_DINGE.length} Dingen länger angesehen:<br>${flur}<br><br>Im Bad: ${BAD_DINGE.filter(d => seen.has(d.id)).length} von ${BAD_DINGE.length}:<br>${BAD_DINGE.map(d => `${seen.has(d.id) ? '✔' : '✗'} ${d.name}`).join('<br>')}${seen.has('bad_ungefragt') ? '<br><br>Du hast allein ins Bad geschaut, ohne Frau Engel zu fragen. Es ist ihre Wohnung: Wie hätte sie das wohl empfunden?' : ''}${log.filter(x => typeof x === 'string').length ? '<br><br><b>Deine Entscheidungen:</b><br>' + log.filter(x => typeof x === 'string').join('<br>') : ''}<br><br>Tagesform von Frau Engel am Ende: ${mood}`);
   if (!renderer.xr.isPresenting && recordings.length) {
     const box = document.createElement('div'); box.style.cssText = 'max-width:900px;font-size:15px;line-height:1.5;text-align:left';
     box.innerHTML = '<b>Deine eigenen Worte:</b>';
@@ -662,7 +705,7 @@ async function ende() {
 $('startBtn').onclick = async () => {
   $('start').remove(); actx = new AudioContext();
   const ab = +(new URLSearchParams(location.search).get('szene') || 0);
-  const ablauf = [szene0, szene1, szene2, szene3, szene4, szene5, szene5b, szene6, szene7, ende];
+  const ablauf = [szene0, szene1, szene2, szene3, szene4, szene5, szene5b, szene6, szene7, szene8, szene9, ende];
   try { for (const f of ablauf.slice(ab)) await f(); }
   catch (e) { sub('Fehler: ' + e.message); console.error(e); }
 };
