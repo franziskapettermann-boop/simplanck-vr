@@ -40,7 +40,7 @@ document.body.appendChild(VRButton.createButton(renderer));
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x0b0b0b);
-const camera = new THREE.PerspectiveCamera(70, innerWidth / innerHeight, 0.05, 50);
+const camera = new THREE.PerspectiveCamera(46, innerWidth / innerHeight, 0.05, 50);
 const rig = new THREE.Group(); rig.add(camera); scene.add(rig);
 camera.position.set(0, EYE, 0);
 
