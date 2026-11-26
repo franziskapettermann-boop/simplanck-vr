@@ -135,6 +135,20 @@ async function addFigur(room, { src, u, v, groesse = 1.58, rand = 0.012 }) {
   const fig = { vid, plane, play: () => vid.play().catch(() => {}) }; windows.push(fig); return fig;
 }
 
+// Einmal-Video mit Freisteller (Farbe | Maske) genau im Blickausschnitt eines Panoramas, z. B. Frau Engel geht ins Bad
+function addGang(room, { u, v, hfov, aspect, src }) {
+  const vid = document.createElement('video'); vid.src = src; vid.loop = false; vid.muted = true; vid.playsInline = true; vid.crossOrigin = 'anonymous'; vid.preload = 'auto';
+  const vt = new THREE.VideoTexture(vid); vt.colorSpace = THREE.NoColorSpace;
+  const D = room.point(u, v, 0).length() * 0.9, w = 2 * D * Math.tan(hfov * Math.PI / 360), h = w / aspect;
+  const mat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, depthTest: false, uniforms: { map: { value: vt } },
+    vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
+    fragmentShader: 'uniform sampler2D map; varying vec2 vUv; void main(){ vec3 c = texture2D(map, vec2(vUv.x * 0.5, vUv.y)).rgb; float a = smoothstep(0.2, 0.8, texture2D(map, vec2(0.5 + vUv.x * 0.5, vUv.y)).r); if (a < 0.01) discard; gl_FragColor = vec4(c, a); }' });
+  const plane = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat);
+  plane.position.copy(dirOf(u, v).multiplyScalar(D)); plane.lookAt(0, 0, 0); plane.renderOrder = 6; plane.visible = false;
+  room.group.add(plane);
+  return { vid, plane, run: () => new Promise(res => { vid.currentTime = 0; plane.visible = true; vid.onended = () => { plane.visible = false; res(); }; vid.play().catch(() => res()); setTimeout(() => { plane.visible = false; res(); }, 12000); }) };
+}
+
 // Videofenster: ein Ausschnitt des Panoramas wird lebendig (Video aus genau diesem Blickwinkel)
 const windows = []; window.__windows = windows;
 function addWindow(room, { u, v, vfov, aspect, src, dist }) {
@@ -545,10 +559,26 @@ async function szene5b() {
   await say('engel', 'Na ja … den Rücken krieg ich nicht mehr hin. Und die Füße auch nicht. Aber das Gesicht, das mach ich selber!', 'engel_ruecken');
   mood = 'müde';
 }
+async function szene6() {
+  // Weg ins Bad: Frau Engel geht mit dem Rollator voraus
+  note('Frau Engel stellt sich am Rollator auf. „Dann kommen Sie. Das Bad ist im Flur.“');
+  await sleep(2500);
+  const flur = await buildRoom('flur');
+  if (!flur.gang) flur.gang = addGang(flur, { u: 0.44, v: 0.56, hfov: 90, aspect: 16 / 9, src: 'figur/engel_gehen_alpha.mp4' });
+  await goRoom('flur', 0.44, STAND, 0.08); hotspots = FLUR_DINGE;
+  playTon('sfx_rollator', 0.9);
+  await flur.gang.run();
+  note('Frau Engel ist im Bad verschwunden. Du gehst hinterher.');
+  setMarkers(current, [{ u: 0.372, v: 0.80, label: 'Ins Bad', go: 'bad' }]);
+  await waitMarker();
+  await goRoom('bad', 0.5, STAND); hotspots = [];
+  note('Im Bad. Hier geht es bald weiter: Waschen, Intimsphäre, Notruf.');
+  await sleep(2500);
+}
 async function ende() {
   hotspots = [];
   const flur = FLUR_DINGE.map(d => `${seen.has(d.id) ? '✔' : '✗'} ${d.name}`).join('<br>');
-  sub(`<b>Ende des Testabschnitts.</b> Weiter geht es später mit dem Weg ins Bad.<br><br>Im Flur hast du ${FLUR_DINGE.filter(d => seen.has(d.id)).length} von ${FLUR_DINGE.length} Dingen länger angesehen:<br>${flur}${seen.has('bad_ungefragt') ? '<br><br>Du hast allein ins Bad geschaut, ohne Frau Engel zu fragen. Es ist ihre Wohnung: Wie hätte sie das wohl empfunden?' : ''}${log.length ? '<br><br><b>Deine Entscheidungen:</b><br>' + log.join('<br>') : ''}<br><br>Tagesform von Frau Engel am Ende: ${mood}`);
+  sub(`<b>Ende des Testabschnitts.</b> Weiter geht es später mit dem Waschen im Bad.<br><br>Im Flur hast du ${FLUR_DINGE.filter(d => seen.has(d.id)).length} von ${FLUR_DINGE.length} Dingen länger angesehen:<br>${flur}${seen.has('bad_ungefragt') ? '<br><br>Du hast allein ins Bad geschaut, ohne Frau Engel zu fragen. Es ist ihre Wohnung: Wie hätte sie das wohl empfunden?' : ''}${log.length ? '<br><br><b>Deine Entscheidungen:</b><br>' + log.join('<br>') : ''}<br><br>Tagesform von Frau Engel am Ende: ${mood}`);
   if (!renderer.xr.isPresenting && recordings.length) {
     const box = document.createElement('div'); box.style.cssText = 'max-width:900px;font-size:15px;line-height:1.5;text-align:left';
     box.innerHTML = '<b>Deine eigenen Worte:</b>';
@@ -562,7 +592,7 @@ async function ende() {
 $('startBtn').onclick = async () => {
   $('start').remove(); actx = new AudioContext();
   const ab = +(new URLSearchParams(location.search).get('szene') || 0);
-  const ablauf = [szene0, szene1, szene2, szene3, szene4, szene5, szene5b, ende];
+  const ablauf = [szene0, szene1, szene2, szene3, szene4, szene5, szene5b, szene6, ende];
   try { for (const f of ablauf.slice(ab)) await f(); }
   catch (e) { sub('Fehler: ' + e.message); console.error(e); }
 };
