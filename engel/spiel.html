@@ -408,7 +408,9 @@ async function ende() {
 
 $('startBtn').onclick = async () => {
   $('start').remove(); actx = new AudioContext();
-  try { await szene0(); await szene1(); await szene2(); await szene3(); await szene4(); await ende(); }
+  const ab = +(new URLSearchParams(location.search).get('szene') || 0);
+  const ablauf = [szene0, szene1, szene2, szene3, szene4, ende];
+  try { for (const f of ablauf.slice(ab)) await f(); }
   catch (e) { sub('Fehler: ' + e.message); console.error(e); }
 };
 </script>
