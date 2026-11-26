@@ -316,7 +316,7 @@ let opened = false;
 let mood = new URLSearchParams(location.search).get('tagesform') || MOODS[Math.floor(Math.random() * 3)];
 const byMood = o => o[mood] || o.gut;
 
-const TUER_FIGUR = { u: qn('fu', 0.207), v: qn('fv', 0.762), groesse: qn('gr', 1.9), src: 'figur/engel_tuer_alpha.mp4' };
+const TUER_FIGUR = { u: qn('fu', 0.222), v: qn('fv', 0.762), groesse: qn('gr', 2.1), src: 'figur/engel_tuer_alpha.mp4' };
 const FLUR_DINGE = [
   { id: 'laeufer', u: 0.44, v: 0.915, r: 10, name: 'Läufer mit umgeschlagener Ecke' },
   { id: 'pantoffeln', u: 0.491, v: 0.79, r: 8, name: 'Pantoffeln mitten im Weg' },
