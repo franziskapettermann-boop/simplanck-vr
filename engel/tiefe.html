@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="de"><head><meta charset="utf-8"><title>Tiefenkarte berechnen</title>
+<style>body{font-family:system-ui;background:#111;color:#eee;padding:20px}img,canvas{max-width:45vw;margin:6px}</style></head>
+<body>
+<h3>Tiefenkarte (Werkzeug, läuft nur im Browser)</h3>
+<p id="st">Lade Modell …</p>
+<img id="src" src="wohnzimmer.jpg"><span id="out"></span>
+<script type="module">
+import { pipeline } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3';
+const st = document.getElementById('st');
+window.__state = 'loading';
+try {
+  const est = await pipeline('depth-estimation', 'onnx-community/depth-anything-v2-small', { dtype: 'fp32', progress_callback: p => { if (p.progress) st.textContent = 'Lade Modell … ' + Math.round(p.progress) + ' %'; } });
+  st.textContent = 'Berechne Tiefe …';
+  const res = await est(new URL(document.getElementById('src').src, location.href).href);
+  const c = res.depth.toCanvas();
+  document.getElementById('out').appendChild(c);
+  window.__depth = c.toDataURL('image/png');
+  window.__size = [c.width, c.height];
+  window.__state = 'done';
+  st.textContent = 'Fertig: ' + c.width + '×' + c.height;
+} catch (e) { window.__state = 'error: ' + e.message; st.textContent = 'Fehler: ' + e.message; }
+</script>
+</body></html>
