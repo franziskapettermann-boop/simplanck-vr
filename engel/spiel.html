@@ -6,7 +6,7 @@
 <title>Erster Besuch bei Frau Engel</title>
 <style>
   html,body{margin:0;height:100%;background:#000;overflow:hidden;font-family:system-ui,sans-serif;color:#fff;touch-action:none}
-  #hud{position:fixed;left:0;right:0;bottom:0;padding:14px 16px 18px;background:linear-gradient(transparent,rgba(0,0,0,.82) 30%);display:flex;flex-direction:column;gap:10px;align-items:center}
+  #hud{position:fixed;z-index:20;left:0;right:0;bottom:0;padding:14px 16px 18px;background:linear-gradient(transparent,rgba(0,0,0,.82) 30%);display:flex;flex-direction:column;gap:10px;align-items:center}
   #sub{max-width:900px;font-size:18px;line-height:1.4;text-align:center;text-shadow:0 1px 3px #000;min-height:1.4em}
   #sub b{color:#ffd27a;font-weight:600}
   #choices{display:flex;flex-direction:column;gap:8px;width:min(900px,100%)}
@@ -15,8 +15,8 @@
   #own{display:none;width:min(900px,100%);gap:8px}
   #own textarea{flex:1;font:inherit;font-size:16px;border-radius:10px;padding:10px;min-height:52px;background:rgba(255,255,255,.95);color:#111;border:0}
   #own button{font:inherit;font-size:16px;border-radius:10px;padding:0 16px;border:0;background:#2b6cb0;color:#fff}
-  #top{position:fixed;top:10px;left:12px;right:12px;font-size:13px;opacity:.85;text-shadow:0 1px 2px #000;display:flex;justify-content:space-between;gap:10px}
-  #start{position:fixed;inset:0;background:rgba(0,0,0,.82);display:flex;align-items:center;justify-content:center;z-index:5}
+  #top{position:fixed;z-index:20;top:10px;left:12px;right:12px;font-size:13px;opacity:.85;text-shadow:0 1px 2px #000;display:flex;justify-content:space-between;gap:10px}
+  #start{position:fixed;inset:0;background:rgba(0,0,0,.82);display:flex;align-items:center;justify-content:center;z-index:30}
   #start div{max-width:560px;padding:24px;line-height:1.5}
   #start h1{font-size:24px;margin:0 0 10px}
   #start button{font:inherit;font-size:18px;padding:12px 22px;border-radius:12px;border:0;background:#2b6cb0;color:#fff;margin-top:14px}
@@ -51,7 +51,7 @@ renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.xr.enabled = true;
 renderer.xr.setReferenceSpaceType('local-floor');
 document.body.appendChild(renderer.domElement);
-document.body.appendChild(VRButton.createButton(renderer));
+if (navigator.xr) navigator.xr.isSessionSupported('immersive-vr').then(ok => { if (ok) document.body.appendChild(VRButton.createButton(renderer)); }).catch(() => {});
 const scene = new THREE.Scene(); scene.background = new THREE.Color(0x000000);
 const camera = new THREE.PerspectiveCamera(80, innerWidth / innerHeight, 0.05, 50);
 const rig = new THREE.Group(); rig.add(camera); scene.add(rig);
