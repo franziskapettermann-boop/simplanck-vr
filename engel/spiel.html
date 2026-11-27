@@ -65,7 +65,7 @@ const loadImg = src => new Promise((r, f) => { const i = new Image(); i.crossOri
 const rooms = {};
 async function buildRoom(name) {
   if (rooms[name]) return rooms[name];
-  const BILD_V = { bad: 3, wohnzimmer: 2 };
+  const BILD_V = { bad: 3, wohnzimmer: 2, flur: 2 };
   const [photo, depth] = await Promise.all([loadImg(name + '360.jpg?v=' + (BILD_V[name] || 1)), loadImg(name + '360_tiefe.png')]);
   const dc = document.createElement('canvas'); dc.width = depth.width; dc.height = depth.height;
   const dx = dc.getContext('2d'); dx.drawImage(depth, 0, 0); const dd = dx.getImageData(0, 0, dc.width, dc.height).data;
@@ -579,6 +579,7 @@ const FLUR_WEGE = [
   { u: 0.50, v: 0.74, label: 'Weiter in den Flur', go: 'flur2' },
   { u: 0.915, v: 0.80, label: 'Ins Wohnzimmer', go: 'wohnzimmer' }
 ];
+function zeigeKabel() { const f = rooms.flur; if (!f || f.kabelBild) return; f.kabelBild = addBild(f, { u: 0.66, v: 0.80, hfov: 80.08, aspect: 1, src: 'figur/flur_kabel_wand.png?v=1', cx: 960, cy: 540, w: 1600, h: 1200 }); }
 function zeigePantoffeln() {
   const flur = rooms.flur; if (!flur) return;
   if (!flur.pant) flur.pant = addBild(flur, { u: 0.491, v: 0.79, hfov: 50, aspect: 16 / 9, src: 'figur/flur_pantoffeln_weg.png', cx: 639, cy: 622.5, w: 1106, h: 709 });
@@ -618,7 +619,7 @@ async function szene3() {
     }
     if (ziel === 'a_kabel') {
       const c = await choose([{ label: 'Das Kabel an die Wand legen und es ihr sagen', k: 'weg' }, { label: 'Liegen lassen', k: 'lass' }]);
-      if (c.k === 'weg') { behoben.add('kabel'); note('Das Kabel liegt jetzt an der Wand. „Ach, das hab ich gar nicht mehr gesehen.“'); log.push('Flur: Kabel an die Wand gelegt'); await sleep(2500); }
+      if (c.k === 'weg') { behoben.add('kabel'); zeigeKabel(); note('Das Kabel liegt jetzt an der Wand. „Ach, das hab ich gar nicht mehr gesehen.“'); log.push('Flur: Kabel an die Wand gelegt'); await sleep(2500); }
       else { seen.add('lass_kabel'); log.push('Flur: Kabel gesehen, aber liegen gelassen'); }
       continue;
     }
