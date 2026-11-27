@@ -104,9 +104,9 @@ async function buildRoom(name) {
 // Frau Engel im Sessel (freigestelltes Video), nur im Wohnzimmer
 let engelVideo = null;
 async function addEngel(room) {
-  const meta = await fetch('figur/engel_alpha.json').then(r => r.json());
+  const meta = await fetch('figur/engel_alpha' + MIMIK + '.json').then(r => r.json());
   const top = room.point(0.389, 0.535, 0), foot = room.point(0.389, 0.81, 0);
-  const v = document.createElement('video'); v.src = 'figur/engel_alpha.mp4'; v.loop = true; v.muted = true; v.playsInline = true; v.crossOrigin = 'anonymous';
+  const v = document.createElement('video'); v.src = 'figur/engel_alpha' + MIMIK + '.mp4'; v.loop = true; v.muted = true; v.playsInline = true; v.crossOrigin = 'anonymous';
   engelVideo = v;
   const vt = new THREE.VideoTexture(v); vt.colorSpace = THREE.NoColorSpace;
   const mat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, uniforms: { map: { value: vt } },
@@ -510,11 +510,19 @@ async function warum(frage, opts, bereich) {
 const badStatus = {};
 let opened = false, waschWahl = null, heardRuecken = false, stolper = false, waschK = null, notrufK = null;
 const behoben = new Set();
-let mood = new URLSearchParams(location.search).get('tagesform') || MOODS[Math.floor(Math.random() * 3)];
+// Tagesform: per URL festlegbar, sonst zufällig – und nie zweimal hintereinander dieselbe
+let mood = new URLSearchParams(location.search).get('tagesform');
+if (!MOODS.includes(mood)) {
+  let letzte = null; try { letzte = localStorage.getItem('engel_letzte_tagesform'); } catch (e) {}
+  const rest = MOODS.filter(m => m !== letzte);
+  mood = rest[Math.floor(Math.random() * rest.length)];
+}
+try { localStorage.setItem('engel_letzte_tagesform', mood); } catch (e) {}
+const MIMIK = { gut: '', 'müde': '_muede', misstrauisch: '_misstrauisch' }[mood] || '';
 const byMood = o => o[mood] || o.gut;
 const sayM = (who, texts, files) => say(who, byMood(texts), byMood(files));
 
-const TUER_FIGUR = { u: qn('fu', 0.222), v: qn('fv', 0.762), groesse: qn('gr', 2.1), src: 'figur/engel_tuer_alpha.mp4' };
+const TUER_FIGUR = { u: qn('fu', 0.222), v: qn('fv', 0.762), groesse: qn('gr', 2.1), src: 'figur/engel_tuer_alpha' + MIMIK + '.mp4' };
 const FLUR_DINGE = [
   { id: 'laeufer', u: 0.44, v: 0.915, r: 10, name: 'Läufer mit umgeschlagener Ecke' },
   { id: 'pantoffeln', u: 0.491, v: 0.79, r: 8, name: 'Pantoffeln mitten im Weg' },
