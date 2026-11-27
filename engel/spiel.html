@@ -753,13 +753,13 @@ async function szene6() {
   await waitMarker();
 }
 const BAD_DINGE = [
-  { id: 'fenster', u: 0.33, v: 0.30, r: 14, t: 1, name: 'Gekipptes Fenster, es zieht' },
-  { id: 'heizung', u: 0.335, v: 0.62, r: 14, t: 1, name: 'Heizung mit Handtuch' },
-  { id: 'seife', u: 0.495, v: 0.56, r: 9, t: 1, name: 'Ihre eigene Seife' },
-  { id: 'schrank', u: 0.53, v: 0.24, r: 12, t: 1, name: 'Spiegelschrank' },
-  { id: 'notruf', u: 0.66, v: 0.61, r: 11, t: 1, name: 'Notrufarmband auf der Waschmaschine' },
-  { id: 'matte', u: 0.42, v: 0.92, r: 16, t: 1, name: 'Badematte ohne Rutschschutz' },
-  { id: 'badtuer', u: 0.86, v: 0.50, r: 16, t: 1, name: 'Offene Badezimmertür' }
+  { id: 'fenster', u: 0.33, v: 0.36, r: 14, t: 1, name: 'Gekipptes Fenster, es zieht' },
+  { id: 'heizung', u: 0.34, v: 0.66, r: 14, t: 1, name: 'Heizung mit Handtuch' },
+  { id: 'seife', u: 0.466, v: 0.56, r: 10, t: 1, name: 'Ihre eigene Seife' },
+  { id: 'schrank', u: 0.50, v: 0.35, r: 12, t: 1, name: 'Spiegelschrank' },
+  { id: 'notruf', u: 0.656, v: 0.61, r: 12, t: 1, name: 'Notrufarmband auf der Waschmaschine' },
+  { id: 'matte', u: 0.42, v: 0.90, r: 16, t: 1, name: 'Badematte ohne Rutschschutz' },
+  { id: 'badtuer', u: 0.88, v: 0.50, r: 16, t: 1, name: 'Offene Badezimmertür' }
 ];
 // Frau Engel im Bad: lebendiges Video, bei starken Gefühlen ein passendes Standbild
 let gefuehl = null;
@@ -784,13 +784,13 @@ async function szene7() {
   let fensterZu = false, tuerZu = false, warm = false, matte = false, seife = false, temp = null, waschtSchon = false, fertig = false;
   const tuerSchliessen = (wie) => { if (tuerZu) return; tuerZu = true; playTon('sfx_badtuer', 0.7); if (gefuehl === 'scham') engelGefuehl(null); log.push('Bad: Tür geschlossen' + (wie ? ' (' + wie + ')' : '')); };
   const AKTIONEN = [
-    { u: 0.86, v: 0.53, label: 'Tür', needs: 'badtuer', ding: true, aktion: () => { tuerSchliessen('selbst bemerkt'); note('Du schließt die Badtür.'); } },
-    { u: 0.33, v: 0.30, label: 'Fenster', needs: 'fenster', ding: true, aktion: () => { fensterZu = true; strasse.volume = 0.06; sicht(false); if (gefuehl === 'frieren') engelGefuehl(null); note('Du schließt das Fenster. Es wird ruhiger.'); log.push('Bad: Fenster geschlossen'); } },
-    { u: 0.335, v: 0.60, label: 'Heizung', needs: 'heizung', ding: true, aktion: () => { warm = true; note('Du legst ein frisches Handtuch zum Anwärmen auf die Heizung.'); log.push('Bad: Handtuch auf der Heizung angewärmt'); } },
+    { u: 0.90, v: 0.50, label: 'Tür', needs: 'badtuer', ding: true, aktion: () => { tuerSchliessen('selbst bemerkt'); note('Du schließt die Badtür.'); } },
+    { u: 0.33, v: 0.36, label: 'Fenster', needs: 'fenster', ding: true, aktion: () => { fensterZu = true; strasse.volume = 0.06; sicht(false); if (gefuehl === 'frieren') engelGefuehl(null); note('Du schließt das Fenster. Es wird ruhiger.'); log.push('Bad: Fenster geschlossen'); } },
+    { u: 0.34, v: 0.62, label: 'Heizung', needs: 'heizung', ding: true, aktion: () => { warm = true; note('Du legst ein frisches Handtuch zum Anwärmen auf die Heizung.'); log.push('Bad: Handtuch auf der Heizung angewärmt'); } },
     { u: 0.42, v: 0.88, label: 'Badematte', needs: 'matte', ding: true, aktion: () => { matte = true; note('Die Matte rutscht auf den Fliesen. Du legst sie zur Seite.'); log.push('Bad: rutschige Badematte weggelegt'); } },
-    { u: 0.495, v: 0.56, label: 'Seife', needs: 'seife', ding: true, aktion: () => { seife = true; note('Ihre eigene Seife, sie riecht nach Lavendel. Du legst sie bereit.'); log.push('Bad: ihre eigene Seife bereitgelegt'); } },
-    { u: 0.53, v: 0.24, label: 'Schrank', needs: 'schrank', ding: true, aktion: () => note('Im Spiegelschrank: Zahnpasta, Hautcreme, ein Kamm, eine Packung Tabletten.') },
-    { u: 0.66, v: 0.61, label: 'Armband', needs: 'notruf', ding: true, aktion: () => { seen.add('armband_bereit'); note('Ein Notrufarmband. Du legst es neben das Waschbecken.'); } }];
+    { u: 0.466, v: 0.56, label: 'Seife', needs: 'seife', ding: true, aktion: () => { seife = true; note('Ihre eigene Seife, sie riecht nach Lavendel. Du legst sie bereit.'); log.push('Bad: ihre eigene Seife bereitgelegt'); } },
+    { u: 0.50, v: 0.33, label: 'Schrank', needs: 'schrank', ding: true, aktion: () => note('Im Spiegelschrank: Zahnpasta, Hautcreme, ein Kamm, eine Packung Tabletten.') },
+    { u: 0.656, v: 0.60, label: 'Armband', needs: 'notruf', ding: true, aktion: () => { seen.add('armband_bereit'); note('Ein Notrufarmband. Du legst es neben das Waschbecken.'); } }];
   setMarkers(current, AKTIONEN);
   note('Frau Engel sitzt auf dem Hocker am Waschbecken und wartet. Was du länger anschaust, kannst du antippen.');
   const tStart = performance.now();
