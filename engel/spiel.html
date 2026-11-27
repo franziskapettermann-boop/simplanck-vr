@@ -879,9 +879,9 @@ async function szene7() {
     { label: 'Es ihr einfach wieder ums Handgelenk machen', k: 'einfach' },
     { label: 'Liegen lassen, es ist ihre Entscheidung', k: 'liegen' }]);
   strasse.pause(); notrufK = n.k; pkt('sicherheit', n.k === 'fragen', 'Notrufarmband mit Einverständnis angelegt');
-  if (n.k === 'fragen') { await say('engel', 'Na, wenn Sie meinen … Machen Sie’s mir halt dran. … Kommen Sie morgen wieder?', 'engel_notruf_ok'); log.push('Notruf: erklärt, gefragt und mit Einverständnis angelegt');
+  if (n.k === 'fragen') { engelGefuehl('froh'); await say('engel', 'Na, wenn Sie meinen … Machen Sie’s mir halt dran. … Kommen Sie morgen wieder?', 'engel_notruf_ok'); log.push('Notruf: erklärt, gefragt und mit Einverständnis angelegt');
     await say('engel', 'Das ist gut, dann vergess ich’s nicht. … Na, so schlimm war’s ja gar nicht mit Ihnen.', 'engel_abschied'); }
-  if (n.k === 'einfach') { await say('engel', 'Jetzt fangen Sie auch noch an wie meine Tochter.', 'engel_wie_tochter'); log.push('Notruf: ohne zu fragen angelegt'); }
+  if (n.k === 'einfach') { engelGefuehl('scham'); await say('engel', 'Jetzt fangen Sie auch noch an wie meine Tochter.', 'engel_wie_tochter'); log.push('Notruf: ohne zu fragen angelegt'); }
   if (n.k === 'liegen') { note('Das Armband bleibt auf der Waschmaschine. Wenn Frau Engel heute stürzt, kann sie keine Hilfe rufen.'); log.push('Notruf: liegen gelassen, Sturzrisiko ohne Hilferuf'); await sleep(3500); }
   await sleep(800);
 }
