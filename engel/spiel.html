@@ -352,7 +352,8 @@ function tryMarker(origin, dir) {
   const m = markers.find(k => k.hit === hits[0].object || k.ring === hits[0].object);
   const r = markerResolve; markerResolve = null; setMarkers(current, []); r?.(m.go); return true;
 }
-function pulseMarkers(t) { markers.forEach(m => { const s = 1 + 0.12 * Math.sin(t * 3); m.ring.scale.set(s, s, s); if (m.needs) m.obj.visible = seen.has(m.needs); }); }
+function pulseMarkers(t) { markers.forEach(m => { const s = 1 + 0.12 * Math.sin(t * 3); m.ring.scale.set(s, s, s); if (m.needs) m.obj.visible = seen.has(m.needs); if (m.ding) { camera.getWorldPosition(camPos); m.obj.lookAt(camPos); } }); }
+const camPos = new THREE.Vector3();
 // Auf Bodenmarke/Ding ODER Antwort auf der Tafel warten
 function waitAny(choices) {
   const pm = waitMarker().then(go => ({ go }));
