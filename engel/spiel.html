@@ -909,6 +909,10 @@ async function szene7() {
     { t: 'Damit man draußen im Flur nichts hört', ok: false, info: 'Es geht um mehr als Geräusche. Denk an Frau Engels Gefühl.' }], 'wuerde');
   await sleep(800);
 }
+const FLUR_NAMEN = { laeufer: ['der Läufer mit umgeschlagener Ecke', 'den Läufer glattgelegt'], kabel: ['das Telefonkabel quer im Weg', 'das Kabel an die Wand gelegt'], pantoffeln: ['Pantoffeln mitten im Weg', 'die Pantoffeln zur Seite gestellt'] };
+const undListe = l => l.length < 2 ? (l[0] || '') : l.slice(0, -1).join(', ') + ' und ' + l[l.length - 1];
+function flurListe() { const l = ['laeufer', 'kabel', 'pantoffeln'].filter(id => seen.has(id)).map(id => FLUR_NAMEN[id][0]); return undListe(l.length ? l : ['Läufer und Kabel']); }
+function flurBehoben() { return undListe([...behoben].filter(id => FLUR_NAMEN[id]).map(id => FLUR_NAMEN[id][1])); }
 const mischen = a => a.map(x => [Math.random(), x]).sort((p, q) => p[0] - q[0]).map(x => x[1]);
 // Jana fragt nach. Nur was man selbst gesehen oder gehört hat, zählt; Antworten müssen zum eigenen Besuch passen.
 async function janaFragt(text, file, opts) {
@@ -918,7 +922,7 @@ async function janaFragt(text, file, opts) {
     sub(`<b>Jana:</b> ${text}`);
     const c = await choose(liste.map(o => ({ label: o.t, o })));
     const o = c.o;
-    if (o.braucht && !o.braucht.some(id => seen.has(id))) {
+    if (o.braucht && !o.braucht.some(id => seen.has(id) || behoben.has(id) || seen.has('lass_' + id))) {
       log.push('Übergabe: etwas behauptet, das nicht selbst gesehen wurde (' + o.t + ')'); pkt('doku', false, 'Nicht Gesehenes weitergegeben');
       await say('jana', 'Hast du das selbst gesehen?', 'jana_gesehen');
       const e = await choose([{ label: 'Nein, ehrlich gesagt nicht genau', k: 'nein' }, { label: 'Ich glaube schon …', k: 'glaub' }]);
@@ -942,8 +946,9 @@ async function szene8() {
   await ownWords('Erzähl Jana in zwei, drei Sätzen, wie der Besuch war.');
   const n = (t, ms = 4000) => async () => { note(t); await sleep(ms); };
   await janaFragt('Wie kommt sie in der Wohnung zurecht?', 'jana_q_wohnung', [
-    { t: 'Im Flur: Läufer und Kabel sind Stolperfallen', braucht: ['laeufer', 'kabel', 'lass_laeufer', 'lass_kabel'], ok: true },
-    { t: 'Im Flur ist es dunkel, die Lampe ist kaputt', braucht: ['lampe'], ok: true },
+    { t: 'Im Flur gibt es Stolperfallen: ' + flurListe(), nur: () => behoben.size === 0, braucht: ['laeufer', 'kabel', 'pantoffeln'], ok: true },
+    { t: 'Im Flur lagen Stolperfallen. Ich habe ' + flurBehoben() + '. Das Team sollte darauf achten, ob es so bleibt', nur: () => behoben.size > 0, ok: true, dann: n('Gut. Genau so: was war, was du gemacht hast, worauf die Nächsten achten sollen.', 4500) },
+    { t: 'Im Flur ist es sehr dunkel, die Deckenlampe hat keine Birne', braucht: ['lampe'], ok: true },
     { t: 'Am Läufer ist sie fast gestürzt', nur: () => stolper, ok: true },
     { t: 'Sie kommt gut zurecht, nichts Besonderes', ok: false, dann: stolper ? n('Und was war kurz vor dem Bad?') : null },
     { t: 'Zu vollgestellt, sie gehört eigentlich ins Heim', ok: false, dann: n('Das ist eine Bewertung, und die Entscheidung trifft nicht der Pflegedienst. Was hast du konkret gesehen?', 5000) },
@@ -972,7 +977,7 @@ async function szene8() {
       { t: 'Körperpflege problemlos durchgeführt.', ok: false, warum: 'zu allgemein: Was genau?' },
       { t: 'Frau E. ist bei der Körperpflege unkooperativ.', ok: false, warum: 'wertend' }] },
     { was: 'Sicherheit', opts: [
-      { t: stolper ? 'Beinahe-Sturz am Läufer im Flur (Ecke umgeschlagen).' : 'Läufer mit umgeschlagener Ecke und Kabel im Flur.', ok: true },
+      { t: stolper ? 'Beinahe-Sturz am Läufer im Flur (Ecke umgeschlagen).' : behoben.size ? 'Stolperfallen im Flur: ' + flurBehoben() + '. Bitte weiter beobachten.' : 'Läufer mit umgeschlagener Ecke und Kabel im Flur.', ok: true },
       { t: 'Wohnung unordentlich und gefährlich.', ok: false, warum: 'wertend, nicht beschrieben' },
       { t: 'Keine Auffälligkeiten.', ok: false, warum: 'stimmt nicht' }] },
     { was: 'Orientierung', opts: [
