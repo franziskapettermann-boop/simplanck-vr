@@ -1013,48 +1013,42 @@ async function szene8() {
   await sleep(800); motor.pause();
 }
 async function szene9() {
+  // Abends: Frau Engel erzählt ihrer Tochter, wie der Besuch war. Was sie sagt, hängt vom eigenen Handeln ab.
   hotspots = [];
-  const bad = await buildRoom('bad'); if (bad.engel) bad.engel.visible = false;
-  await goRoom('bad', 0.47, 1.25, 0.05);
-  sicht(true);
-  note('Jetzt bist du Frau Engel, 84. Du siehst nicht mehr scharf und hörst schlechter. Allein vom Hocker hochkommen ist schwer. Du sitzt im Bad, ein Handtuch um die Schultern, und wartest.');
-  const strasse = playTon('sfx_strasse', 0.5, true);
-  await sleep(7000);
-  playTon('sfx_badtuer', 0.9); await sleep(700);
-  await say('pflege', 'Morgen! So, dann machen wir Sie mal frei, ich hab nicht viel Zeit.', 'pflege_hektisch');
-  await choose([{ label: '„Guten Morgen … wer sind Sie denn?“' }, { label: '„Könnten Sie bitte die Tür zumachen?“' }, { label: 'Nichts sagen' }]);
-  note('Sie antwortet nicht. Die Tür bleibt offen. Draußen im Flur gehen Schritte vorbei.'); await sleep(3500);
-  await say('pflege', 'Arme hoch. … Na also, geht doch.', 'pflege_arme');
-  sicht(true, 0.5);
-  note('Das Handtuch ist weg. Durchs offene Fenster zieht es auf deinen nackten Rücken.'); await sleep(3500);
-  const c = await choose([{ label: '„Das Gesicht wasch ich selbst.“', k: 'selbst' }, { label: '„Mir ist kalt.“', k: 'kalt' }, { label: 'Die Arme vor der Brust verschränken', k: 'arme' }]);
-  if (c.k === 'kalt') await say('pflege', 'Kalt? Ach was. Wir sind ja gleich fertig.', 'pflege_kalt');
-  else { await say('pflege', 'Ach, lassen Sie mal, das mach ich schnell. So geht’s schneller.', 'pflege_schnell'); note('Sie nimmt dir den Waschlappen aus der Hand. Das Wasser ist zu warm. Niemand fragt.'); }
-  const w = playTon('sfx_bad_wasser', 0.5, true); sicht(true, 1); await sleep(4000);
-  ringPhone(); await sleep(1500); stopRing();
-  await say('pflege', 'Ja? … Nee, ich bin noch bei der Engel im Zweiten. … Ja, die ist heut wieder schwierig. Ich beeil mich.', 'pflege_telefon');
-  w.pause();
-  await choose([{ label: '„Ich bin nicht schwierig.“' }, { label: 'Still sein und warten, bis es vorbei ist' }]);
-  note('Niemand reagiert.'); await sleep(2500);
-  await say('pflege', 'So, fertig. Den Rest machen Sie selber, ja? Tschüss!', 'pflege_tschuess');
-  playTon('sfx_badtuer', 1); await sleep(1200);
-  note('Die Tür fällt zu. Das Fenster steht noch offen. Dein Notrufarmband liegt auf der Waschmaschine, zu weit weg für dich.');
-  await sleep(7000); strasse.pause();
+  await goRoom('wohnzimmer', 0.389, SIT, 0.28); engelVideo?.pause();
+  sicht(false, 0, 0.75);
+  note('Am Abend, kurz nach sieben. Du bist nicht mehr dabei. Frau Engel sitzt allein im Wohnzimmer, das Telefon neben sich. Ihre Tochter Sabine ruft an.');
+  await sleep(5500);
+  ringPhone(); await sleep(2500); stopRing(); await sleep(600);
+  const A = (t, f) => say('engel', t, 'engel_abend_' + f);
+  const alle = Object.values(punkte).flat();
+  const nm = punkte.wuerde.filter(x => /Namen|Begrüßung/.test(x.text));
+  await A('Ja, Sabine? … Ja, die war heute Morgen da. Eine Junge vom Pflegedienst, mit der Jana.', 'start');
+  if (!nm.length || nm.every(x => x.ok)) await A('Die hat sich richtig vorgestellt. Und als ich noch mal nach ihrem Namen gefragt habe, hat sie ihn einfach noch mal gesagt. Ganz ruhig.', 'name_gut');
+  else await A('Wie die hieß? … Das weiß ich nicht mehr. Die hat das so schnell gesagt. Und noch mal fragen mag ich ja auch nicht.', 'name_schlecht');
+  if (seen.has('auskunft')) await A('Und dass du gleich die Ärztin anrufen willst! Die hat dir am Telefon erzählt, ich würde mich nicht waschen lassen. Über mich geredet, als wäre ich gar nicht da.', 'tel_schlecht');
+  else await A('Am Telefon hat sie dir nichts erzählt, oder? Das hat mir gefallen. Das sind meine Sachen.', 'tel_gut');
+  if (stolper) await A('Im Flur wäre ich fast hingefallen, über den Läufer. … Nein, nichts passiert. Aber der Schreck sitzt mir noch in den Knochen.', 'sturz');
+  else if (behoben.size) await A('Im Flur hat sie mir aufgeräumt, den Läufer und so. Erst habe ich gedacht, was räumt die da herum. Aber recht hat sie ja.', 'flur');
+  if (badStatus.tuerZu && badStatus.fensterZu) await A('Im Bad hat sie gleich die Tür zugemacht und das Fenster. Da habe ich mich nicht so ausgeliefert gefühlt.', 'bad_gut');
+  else {
+    if (!badStatus.tuerZu) await A('Die Badtür stand die ganze Zeit offen. Da sitzt du, halb nackt, und jeder kann hineinschauen.', 'tuer_offen');
+    if (!badStatus.fensterZu) await A('Und kalt war es! Das Fenster offen, da hat es mir am Rücken gezogen.', 'kalt');
+  }
+  if (badStatus.warm) await A('Und das Handtuch war warm. Wie früher bei meiner Mutter.', 'handtuch');
+  if (waschK === 'selbst') await A('Das Gesicht habe ich selbst gewaschen. Die hat mich machen lassen. Ich bin doch nicht hilflos.', 'selbst_gut');
+  else await A('Die hat mir den Waschlappen aus der Hand genommen. Als könnte ich gar nichts mehr.', 'selbst_schlecht');
+  if (badStatus.rk && badStatus.rk !== 'sag') await A('Am Rücken hat sie mich einfach angefasst, ohne etwas zu sagen. Ich bin richtig zusammengezuckt.', 'ruecken');
+  if (notrufK === 'fragen') await A('Und das Armband habe ich jetzt um. Die hat mich gefragt und erklärt, warum. Da habe ich halt ja gesagt.', 'notruf_gut');
+  else await A('Das Armband? … Das liegt im Bad, glaube ich. Da komme ich jetzt nicht mehr hin.', 'notruf_schlecht');
+  const q = alle.length ? alle.filter(x => x.ok).length / alle.length : 1;
+  if (q >= 0.75) await A('Also, die darf wiederkommen, Sabine. Die war in Ordnung. … Gute Nacht.', 'fazit_gut');
+  else if (q >= 0.5) await A('Na ja. Die ist halt noch jung. Man wird sehen. … Gute Nacht, Sabine.', 'fazit_mittel');
+  else await A('Ich will die nicht mehr, Sabine. Dann mache ich es lieber allein. … Gute Nacht.', 'fazit_schlecht');
+  log.push(q >= 0.75 ? 'Abends: Frau Engel möchte, dass du wiederkommst' : q >= 0.5 ? 'Abends: Frau Engel ist unentschieden' : 'Abends: Frau Engel will dich nicht mehr');
+  note('Sie legt auf. Es ist still in der Wohnung.'); await sleep(3500);
   await fadeTo(1); sicht(false); await fadeTo(0);
-  // Kontrast: der eigene Besuch
-  const z = (ok, gut, schlecht) => (ok ? '✔ ' + gut : '✗ ' + schlecht);
-  const zeilen = [
-    z(badStatus.tuerZu, 'Bei dir war die Tür zu.', 'Auch bei dir blieb die Tür offen.'),
-    z(badStatus.fensterZu, 'Du hast das Fenster geschlossen.', 'Auch bei dir zog es durchs Fenster.'),
-    z(badStatus.warm, 'Du hattest ein warmes Handtuch bereit.', 'Bei dir gab es kein angewärmtes Handtuch.'),
-    z(badStatus.temp === 'sie', 'Sie durfte die Wassertemperatur selbst fühlen.', 'Die Wassertemperatur hast du über ihren Kopf hinweg entschieden.'),
-    z(waschK === 'selbst', 'Sie durfte ihr Gesicht selbst waschen.', 'Auch du hast ihr den Waschlappen abgenommen.'),
-    z(badStatus.rk === 'sag', 'Du hast Berührungen angekündigt.', 'Du hast nicht angekündigt, bevor du sie berührt hast.'),
-    z(!seen.has('auskunft'), 'Du hast am Telefon nicht über sie gesprochen.', 'Auch du hast am Telefon über sie gesprochen.'),
-    z(notrufK === 'fragen', 'Ihr Notrufarmband trägt sie jetzt.', 'Ihr Notrufarmband war am Ende nicht an ihrem Handgelenk.')];
-  sub('<b>Und so war es bei deinem Besuch:</b><br>' + zeilen.join('<br>'));
-  await choose([{ label: 'Weiter' }]);
-  await ownWords('Was hat dir als Frau Engel am meisten gefehlt? Und was nimmst du dir für deinen nächsten Besuch vor?');
+  await ownWords('Was ist bei Frau Engel angekommen, was nicht? Was nimmst du dir für deinen nächsten Besuch vor?');
 }
 const BEREICHE = [
   { k: 'wuerde', name: 'Würde und Beziehung', ziel: 'Ich begegne Frau Engel respektvoll und schütze ihre Intimsphäre.', tipp: 'Mit Namen und Grund vorstellen, Rückfragen geduldig beantworten, Tür zu, Berührungen ankündigen.' },
