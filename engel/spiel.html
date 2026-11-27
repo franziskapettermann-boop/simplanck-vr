@@ -1016,7 +1016,7 @@ async function szene9() {
   // Abends: Frau Engel erzählt ihrer Tochter, wie der Besuch war. Was sie sagt, hängt vom eigenen Handeln ab.
   hotspots = [];
   await goRoom('wohnzimmer', 0.389, SIT, 0.28); engelVideo?.pause();
-  sicht(false, 0, 0.75);
+  sicht(false, 0, 0.85); renderer.domElement.style.filter = 'brightness(0.5) saturate(0.7) sepia(0.25)';
   note('Am Abend, kurz nach sieben. Du bist nicht mehr dabei. Frau Engel sitzt allein im Wohnzimmer, das Telefon neben sich. Ihre Tochter Sabine ruft an.');
   await sleep(5500);
   ringPhone(); await sleep(2500); stopRing(); await sleep(600);
@@ -1047,7 +1047,7 @@ async function szene9() {
   else await A('Ich will die nicht mehr, Sabine. Dann mache ich es lieber allein. … Gute Nacht.', 'fazit_schlecht');
   log.push(q >= 0.75 ? 'Abends: Frau Engel möchte, dass du wiederkommst' : q >= 0.5 ? 'Abends: Frau Engel ist unentschieden' : 'Abends: Frau Engel will dich nicht mehr');
   note('Sie legt auf. Es ist still in der Wohnung.'); await sleep(3500);
-  await fadeTo(1); sicht(false); await fadeTo(0);
+  await fadeTo(1); sicht(false); renderer.domElement.style.filter = ''; await fadeTo(0);
   await ownWords('Was ist bei Frau Engel angekommen, was nicht? Was nimmst du dir für deinen nächsten Besuch vor?');
 }
 const BEREICHE = [
