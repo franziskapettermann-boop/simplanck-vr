@@ -256,7 +256,7 @@ function klick() { try { actx = actx || new AudioContext(); const o = actx.creat
 function chooseOder(list, bedingung, ersatz) {
   return new Promise(res => {
     let fertig = false;
-    choose(list).then(c => { if (!fertig) { fertig = true; res(c); } });
+    choose(mischen(list)).then(c => { if (!fertig) { fertig = true; res(c); } });
     (async () => { while (!fertig) { if (bedingung()) { fertig = true; $('choices').innerHTML = ''; currentChoices = []; choiceResolve = null; panel.draw(); res(ersatz); } await sleep(200); } })();
   });
 }
@@ -563,7 +563,7 @@ async function szene2() {
     { label: '„Guten Morgen, Frau Engel! Ich bin vom Pflegedienst, wir gehen dann gleich zusammen ins Bad, ja?“', k: 'c' }]);
   if (c.k === 'a' && mood !== 'misstrauisch') {
     await say('engel', 'Na, dann kommen Sie halt rein. … Und Sie sind noch mal …?', 'engel_reinkommen');
-    const nm = await choose([{ label: 'Freundlich noch einmal den Namen sagen', k: 'ja' }, { label: '„Das hab ich doch gerade gesagt.“', k: 'nein' }, { label: 'Den Ausweis zeigen und den Namen dazu sagen', k: 'ausweis' }]);
+    const nm = await mischenWahl([{ label: 'Freundlich noch einmal den Namen sagen', k: 'ja' }, { label: '„Das hab ich doch gerade gesagt.“', k: 'nein' }, { label: 'Den Ausweis zeigen und den Namen dazu sagen', k: 'ausweis' }]);
     if (nm.k === 'nein') { await say('engel', 'Ach so … ja.', 'engel_achso'); mood = 'misstrauisch'; pkt('wuerde', false, 'Namen nicht wiederholt'); }
     else { await say('engel', 'Ach ja, richtig. Ich vergess das immer so schnell.', 'engel_vergess'); pkt('wuerde', true, 'Namen geduldig wiederholt'); }
   }
@@ -609,7 +609,7 @@ async function szene3() {
     setMarkers(current, [...FLUR_WEGE, ...FLUR_AKTION.filter(a => !behoben.has(a.go.slice(2)) && !seen.has('lass_' + a.go.slice(2)))]);
     const ziel = await waitMarker();
     if (ziel === 'a_laeufer') {
-      const c = await choose([{ label: '„Darf ich die Ecke glattlegen? Da stolpert man leicht.“', k: 'frag' }, { label: 'Die Ecke einfach glattlegen', k: 'einfach' }, { label: 'Lassen, es ist ihre Wohnung', k: 'lass' }]);
+      const c = await mischenWahl([{ label: '„Darf ich die Ecke glattlegen? Da stolpert man leicht.“', k: 'frag' }, { label: 'Die Ecke einfach glattlegen', k: 'einfach' }, { label: 'Lassen, es ist ihre Wohnung', k: 'lass' }]);
       if (c.k === 'frag') { behoben.add('laeufer'); zeigePantoffeln(); await say('engel', 'Ja, machen Sie nur. Über den bin ich schon öfter gestolpert.', 'engel_teppich_ok'); log.push('Flur: Läufer nach Rückfrage glattgelegt'); }
       if (c.k === 'einfach') { behoben.add('laeufer'); zeigePantoffeln(); note('Du legst die Ecke glatt. Frau Engel schaut kurz herüber.'); log.push('Flur: Läufer glattgelegt, ohne zu fragen'); await sleep(2000); }
       if (c.k === 'lass') { seen.add('lass_laeufer'); log.push('Flur: Läufer gesehen, aber liegen gelassen'); }
@@ -659,7 +659,7 @@ async function szene4() {
   engelVideo.play().catch(() => {});
   await sleep(1500);
   await sayM('engel', { gut: 'So. Setzen Sie sich doch. Wollen Sie einen Kaffee? … Wie heißen Sie noch mal?', müde: 'Setzen Sie sich. Ich hab heut Nacht kaum geschlafen. … Wie war Ihr Name?', misstrauisch: 'Setzen Sie sich da hin. … Wie heißen Sie noch mal?' }, { gut: 'engel_name_gut', müde: 'engel_name_muede', misstrauisch: 'engel_name_misstr' });
-  const c1 = await choose([
+  const c1 = await mischenWahl([
     { label: 'Freundlich noch einmal den eigenen Namen sagen', k: 'a' },
     { label: 'Den Namen auf einen Zettel schreiben und ihr dalassen', k: 'zettel' },
     { label: 'Freundlich den Namen sagen und auf das Foto mit der Nähmaschine zeigen: „Sind Sie das?“', k: 'foto', needs: 'foto' },
@@ -671,7 +671,7 @@ async function szene4() {
   if (c1.k === 'b') { await say('engel', 'Ach so … ja.', 'engel_achso'); note('Frau Engel wird still. Der Kanarienvogel hört auf zu zwitschern.'); mood = 'misstrauisch'; await sleep(2500); }
   await sayM('engel', { gut: 'Das da oben ist der Willi. Der singt, wenn’s ruhig ist. Mein Mann hat ihn mir noch geschenkt … also, den Vorgänger.', müde: 'Der Willi ist heut auch so still.', misstrauisch: 'Das ist der Willi. Den fasst keiner an.' }, { gut: 'engel_willi_gut', müde: 'engel_willi_muede', misstrauisch: 'engel_willi_misstr' });
   await ownWords('Wie sprichst du das Waschen an?');
-  const c2 = await choose([
+  const c2 = await mischenWahl([
     { label: 'Fragen, wie sie es gewohnt ist und wobei sie sich Hilfe wünscht', k: 'a' },
     { label: '„Ihre Tochter möchte, dass wir Sie zweimal die Woche waschen.“', k: 'b' },
     { label: '„Das geht ganz schnell, dann haben Sie’s hinter sich.“', k: 'c' }]);
@@ -693,7 +693,7 @@ async function szene5() {
   stopRing(); note('Du nimmst den Hörer ab.'); await sleep(1200);
   await say('tochter', 'Hallo? Mama? … Ach, Sie sind vom Pflegedienst. Gut, dass ich Sie erreiche. Wie geht’s ihr denn? Hat sie sich waschen lassen? Sie ist in letzter Zeit so vergesslich, ich mach mir solche Sorgen.', 'tochter_hallo');
   await ownWords('Was sagst du der Tochter?');
-  const t = await choose([
+  const t = await mischenWahl([
     { label: '„Am Telefon darf ich Ihnen keine Auskunft geben. Ich hole Ihnen Ihre Mutter, dann kann sie selbst erzählen.“', k: 'a' },
     { label: '„Ehrlich gesagt will sie sich nicht so gern waschen lassen, und Namen vergisst sie auch schnell.“', k: 'b' },
     { label: '„Dazu kann ich nichts sagen. Bitte melden Sie sich bei unserer Pflegedienstleitung.“', k: 'c' }]);
@@ -720,7 +720,7 @@ async function szene5b() {
   if (!current) { await goRoom('wohnzimmer', 0.389, SIT, 0.28); engelVideo?.play().catch(() => {}); }
   await say('engel', 'Heute lass ich mich nicht waschen. Fertig.', 'engel_nein');
   await ownWords('Frau Engel sagt Nein. Was tust du jetzt?');
-  const c = await choose([
+  const c = await mischenWahl([
     { label: '„Das muss aber heute sein. Ihre Tochter hat uns extra dafür bestellt.“', k: 'druck' },
     { label: 'Ihr Nein ernst nehmen, nicht weiter drängen und Jana anrufen', k: 'jana' },
     { label: '„Gut, dann gehe ich wieder.“ Und aufstehen.', k: 'gehen' }]);
@@ -750,7 +750,7 @@ async function szene6() {
     await say('engel', 'Hoppla! … Jesses, der Teppich!', 'engel_hoppla');
     note('Kurz vor dem Bad bleibt Frau Engel mit dem Rollator an der umgeschlagenen Ecke des Läufers hängen. Sie kann sich gerade noch festhalten.');
     await sleep(2500);
-    const c = await choose([
+    const c = await mischenWahl([
       { label: 'Sofort zu ihr, sie stützen und fragen, ob ihr etwas wehtut', k: 'hin' },
       { label: '„Vorsicht!“ rufen', k: 'ruf' },
       { label: 'Die Ecke jetzt glattlegen und weitergehen', k: 'ecke' }]);
@@ -833,7 +833,7 @@ async function szene7() {
   }
   // Wie anfangen?
   note('Frau Engel sitzt bereit. Wie fängst du an?');
-  const a0 = await choose([
+  const a0 = await mischenWahl([
     { label: 'Fragen, wie sie sich sonst wäscht und womit sie anfangen möchte', k: 'frag' },
     { label: 'Gleich Wasser einlassen, damit sie nicht lange warten muss', k: 'wasser' },
     { label: 'Erklären, wie du es gelernt hast: von oben nach unten', k: 'lehrbuch' }]);
@@ -842,7 +842,7 @@ async function szene7() {
   else { note('Frau Engel nickt nur und wartet.'); await sleep(2500); }
   // Wasser
   note('Am Waschbecken: Wie bereitest du das Wasser vor?');
-  const c = await choose([
+  const c = await mischenWahl([
     { label: 'Wasser einlassen und Frau Engel mit der Hand fühlen lassen', k: 'sie' },
     { label: 'Wasser einlassen und mit dem Handgelenk prüfen, wie bei einem Baby', k: 'ich' },
     { label: 'Gut warmes Wasser einlassen, sie friert ja schnell', k: 'heiss' }]);
@@ -858,7 +858,7 @@ async function szene7() {
   // Waschen
   waschtSchon = true;
   note('Das Wasser ist bereit. Wie geht es weiter?');
-  const w = await choose([
+  const w = await mischenWahl([
     { label: 'Ihr den warmen Waschlappen reichen und abwarten', k: 'selbst' },
     { label: 'Das Gesicht zuerst selbst gründlich waschen, damit es ordentlich wird', k: 'alles' }]);
   waschK = w.k; pkt('selbst', w.k === 'selbst', 'Gesicht selbst waschen lassen');
@@ -871,7 +871,7 @@ async function szene7() {
     { t: 'Damit sie sich beschäftigt fühlt, während ich den Rest vorbereite', ok: false, info: 'Es geht nicht ums Beschäftigen. Was erhält es bei ihr?' },
     { t: 'Weil ich beim Gesicht leichter etwas falsch machen kann', ok: false, info: 'Das ist nicht der Grund. Denk daran, was sie noch selbst kann.' }], 'selbst');
   note('Jetzt ist der Rücken dran.');
-  const rk = await choose([
+  const rk = await mischenWahl([
     { label: 'Fragen: „Darf ich Ihnen jetzt den Rücken waschen?“', k: 'sag' },
     { label: 'Zügig den Rücken waschen, damit sie nicht so lange friert', k: 'still' }]);
   pkt('wuerde', rk.k === 'sag', 'Berührung angekündigt'); badStatus.rk = rk.k;
@@ -880,7 +880,7 @@ async function szene7() {
   await sleep(3000); wasser.pause();
   if (!fensterZu || !warm) {
     sicht(false, 0.7); engelGefuehl('frieren'); await say('engel', 'Na also. Geht doch. … Huch, mir ist kalt.', 'engel_kalt');
-    const k = await choose([
+    const k = await mischenWahl([
       { label: warm ? 'Das warme Handtuch von der Heizung um ihre Schultern legen' : 'Das Handtuch um ihre Schultern legen, nur den Rücken frei lassen', k: 'tuch' },
       { label: 'Schneller weitermachen, damit es bald vorbei ist', k: 'gleich' }]);
     sicht(false); engelGefuehl(k.k === 'tuch' ? null : 'frieren');
@@ -893,7 +893,7 @@ async function szene7() {
   await sleep(2500);
   await say('engel', 'Das Ding stört beim Waschen. Und eigentlich auch sonst.', 'engel_notruf_stoert');
   await ownWords('Was sagst du zum Notrufarmband?');
-  const n = await choose([
+  const n = await mischenWahl([
     { label: 'Erklären, wofür es da ist, und fragen, ob sie es wieder tragen möchte', k: 'fragen' },
     { label: 'Es ihr gleich wieder anlegen, damit es nicht vergessen wird', k: 'einfach' },
     { label: 'Liegen lassen, sie hat ja gesagt, dass es stört', k: 'liegen' }]);
@@ -1002,8 +1002,8 @@ async function szene8() {
   for (;;) {
     for (const z of offen) {
       sub(`<b>Pflegebericht</b> · ${z.was}: Was schreibst du?`);
-      const c = await choose(mischen(z.opts).map(o => ({ label: o.t, o })));
-      wahl[z.was] = c.o;
+      const c = await choose(mischen(z.opts.filter(o => !o.falsch)).map(o => ({ label: o.t, o })));
+      wahl[z.was] = c.o; if (!c.o.ok) c.o.falsch = true;
     }
     const zeilen = ZEILEN.map(z => `${wahl[z.was].ok ? '✔' : '✗'} <b>${z.was}:</b> ${wahl[z.was].t}${wahl[z.was].ok ? '' : ' <i>(' + wahl[z.was].warum + ')</i>'}`).join('<br>');
     offen = ZEILEN.filter(z => !wahl[z.was].ok);
@@ -1071,6 +1071,7 @@ async function ende() {
   const bew = BEREICHE.map(b => { const l = punkte[b.k], n = l.filter(x => x.ok).length, q = l.length ? n / l.length : 1; return { ...b, n, ges: l.length, q, zeichen: q >= 0.75 ? '🟢' : q >= 0.4 ? '🟡' : '🔴' }; });
   const schwach = bew.slice().sort((a, b) => a.q - b.q)[0];
   const auswertung = '<b>Deine Lernziele</b><br>' + bew.map(b => `${b.zeichen} <b>${b.name}</b> (${b.n} von ${b.ges})`).join('<br>') + `<br><br><b>Dein nächster Schritt:</b> ${schwach.name}. ${schwach.tipp}`;
+  renderer.domElement.style.filter = 'brightness(0.35) blur(2px)';
   const tf = { gut: 'gut gelaunt', müde: 'müde', misstrauisch: 'misstrauisch' }[mood] || mood;
   const ergebnis = `<b>Dein Ergebnis · Frau Engel</b> <span style="opacity:.75">(Tagesform: ${tf}, ${new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr)</span><br><br>` +
     (abendSatz ? `<b>Frau Engel am Abend zu ihrer Tochter:</b><br>„${abendSatz}“<br><br>` : '') + auswertung;
