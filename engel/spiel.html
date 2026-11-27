@@ -756,6 +756,14 @@ const BAD_DINGE = [
   { id: 'matte', u: 0.42, v: 0.92, r: 10, name: 'Badematte ohne Rutschschutz' },
   { id: 'badtuer', u: 0.80, v: 0.50, r: 9, name: 'Offene Badezimmertür' }
 ];
+// Frau Engel im Bad: lebendiges Video, bei starken Gefühlen ein passendes Standbild
+function engelGefuehl(name) {
+  const bad = rooms.bad; if (!bad?.leben) return;
+  Object.values(bad.bilder).forEach(b => b.visible = false);
+  if (!name) { bad.leben.visible = true; bad.rest.visible = true; return; }
+  if (!bad.bilder[name]) { bad.bilder[name] = addBild(bad, { u: 0.46, v: 0.6, hfov: 95, aspect: 16 / 9, src: `figur/engel_bad_${name}.png`, cx: 1004, cy: 875.5, w: 946, h: 1471 }); bad.engel.add(bad.bilder[name]); }
+  bad.bilder[name].visible = true; bad.leben.visible = false; bad.rest.visible = false;
+}
 async function szene7() {
   // Im Bad: Intimsphäre, Kälte, Selbstständigkeit, Notruf
   const bad = await buildRoom('bad');
@@ -763,7 +771,7 @@ async function szene7() {
     bad.engel = new THREE.Group(); bad.group.add(bad.engel);
     const rest = addBild(bad, { u: 0.46, v: 0.6, hfov: 95, aspect: 16 / 9, src: 'figur/engel_bad_rest.png', cx: 531 + 64.5, cy: 875.5, w: 129, h: 1471 });
     const leben = addVideoBild(bad, { u: 0.46, v: 0.6, hfov: 95, src: 'figur/engel_bad_leben.mp4', cx: 1010, cy: 873, w: 820, h: 1460 });
-    bad.engel.add(rest, leben);
+    bad.engel.add(rest, leben); bad.leben = leben; bad.rest = rest; bad.bilder = {};
   }
   await goRoom('bad', 0.47, STAND, 0.3); hotspots = BAD_DINGE;
   const strasse = playTon('sfx_strasse', 0.35, true);
@@ -774,7 +782,7 @@ async function szene7() {
   setMarkers(current, [{ u: 0.86, v: 0.53, label: 'Tür schließen', go: 'tuer', ding: true }]);
   const t0 = await waitAny([{ label: 'Die Tür schließen: „Nein, ich mach sie zu.“', k: 'zu' }, { label: '„Nur kurz, dann geht’s schneller.“', k: 'offen' }, { label: 'Nichts sagen und anfangen', k: 'nix' }]);
   if (t0.go === 'tuer' || t0.c?.k === 'zu') { tuerZu = true; playTon('sfx_badtuer', 0.7); log.push('Bad: Tür geschlossen, Intimsphäre geschützt'); }
-  else { await say('engel', 'Ich steh doch da nicht nackig rum!', 'engel_nackig'); mood = 'misstrauisch'; log.push('Bad: Tür offen gelassen, obwohl Frau Engel gefragt hat'); }
+  else { engelGefuehl('scham'); await say('engel', 'Ich steh doch da nicht nackig rum!', 'engel_nackig'); mood = 'misstrauisch'; log.push('Bad: Tür offen gelassen, obwohl Frau Engel gefragt hat'); }
   if (tuerZu && mood !== 'misstrauisch') await say('engel', 'Na gut …', 'engel_naguat');
   pkt('wuerde', tuerZu, 'Badtür geschlossen');
   await warum('Warum ist es wichtig, ob die Badtür zu ist?', [
@@ -795,7 +803,7 @@ async function szene7() {
     let gezogen = false, gedrängt = false;
     while (!prepFertig) {
       const sek = (performance.now() - tStart) / 1000;
-      if (!gezogen && sek > 18 && !fensterZu) { gezogen = true; seen.add('zug'); sicht(false, 0.4); await say('engel', 'Brrr … das zieht aber. Mir wird kalt.', 'engel_zieht'); }
+      if (!gezogen && sek > 18 && !fensterZu) { gezogen = true; seen.add('zug'); sicht(false, 0.4); engelGefuehl('frieren'); await say('engel', 'Brrr … das zieht aber. Mir wird kalt.', 'engel_zieht'); }
       if (!gedrängt && sek > 55) { gedrängt = true; log.push('Bad: Vorbereitung hat lange gedauert, Frau Engel saß halb nackt und wartete'); await say('engel', 'Wie lang dauert das denn noch? Ich sitz hier halb nackig.', 'engel_dauert'); }
       await sleep(500);
     }
@@ -805,8 +813,8 @@ async function szene7() {
     const r = await waitAny([{ label: 'Alles bereit, jetzt anfangen', k: 'los' }]);
     if (r.c) { if (!erledigt.has('wasser')) { note('Ohne Wasser geht es nicht. Was fehlt noch?'); await sleep(2200); continue; } break; }
     const d = r.go; erledigt.add(d);
-    if (d === 'tuer') { tuerZu = true; playTon('sfx_badtuer', 0.7); note('Du schließt die Tür. Frau Engel atmet hörbar auf.'); log.push('Bad: Tür nachträglich geschlossen'); }
-    if (d === 'fenster') { fensterZu = true; sicht(false); strasse.volume = 0.06; note('Das Fenster ist zu. Es wird ruhiger.'); log.push('Bad vorbereitet: Fenster geschlossen'); }
+    if (d === 'tuer') { tuerZu = true; engelGefuehl(null); playTon('sfx_badtuer', 0.7); note('Du schließt die Tür. Frau Engel atmet hörbar auf.'); log.push('Bad: Tür nachträglich geschlossen'); }
+    if (d === 'fenster') { fensterZu = true; sicht(false); engelGefuehl(null); strasse.volume = 0.06; note('Das Fenster ist zu. Es wird ruhiger.'); log.push('Bad vorbereitet: Fenster geschlossen'); }
     if (d === 'warm') { warm = true; note('Du legst ein frisches Handtuch auf die Heizung. Nachher ist es warm.'); log.push('Bad vorbereitet: Handtuch auf der Heizung angewärmt'); }
     if (d === 'matte') { note('Die Matte rutscht auf den Fliesen. Du legst sie zur Seite.'); log.push('Bad vorbereitet: rutschige Badematte weggelegt'); }
     if (d === 'notruf') { seen.add('notruf'); note('Das Notrufarmband liegt auf der Waschmaschine. Darum kümmerst du dich nach dem Waschen.'); }
@@ -824,7 +832,7 @@ async function szene7() {
     }
     await sleep(1800);
   }
-  prepFertig = true; setMarkers(current, []);
+  prepFertig = true; setMarkers(current, []); if (fensterZu) engelGefuehl(null);
   Object.assign(badStatus, { tuerZu, fensterZu, warm, temp, matte: erledigt.has('matte') });
   pkt('waerme', fensterZu, 'Fenster geschlossen'); pkt('waerme', warm, 'Handtuch angewärmt');
   pkt('sicherheit', erledigt.has('matte'), 'Rutschige Badematte weggelegt');
@@ -838,7 +846,7 @@ async function szene7() {
   waschK = w.k; pkt('selbst', w.k === 'selbst', 'Gesicht selbst waschen lassen');
   const wasser = playTon('sfx_bad_wasser', 0.5, true);
   if (w.k === 'selbst') { note('Frau Engel wäscht sich das Gesicht selbst, langsam und gründlich.'); log.push('Waschen: Gesicht selbst gelassen'); }
-  else { note('Du nimmst ihr den Waschlappen aus der Hand. Frau Engel lässt es geschehen und schaut weg.'); mood = 'misstrauisch'; log.push('Waschen: alles übernommen, obwohl sie das Gesicht selbst waschen wollte'); }
+  else { engelGefuehl('scham'); note('Du nimmst ihr den Waschlappen aus der Hand. Frau Engel lässt es geschehen und schaut weg.'); mood = 'misstrauisch'; log.push('Waschen: alles übernommen, obwohl sie das Gesicht selbst waschen wollte'); }
   await sleep(5000);
   await warum('Warum lässt man Frau Engel das Gesicht selbst waschen?', [
     { t: 'Was sie selbst kann, soll sie selbst tun. Das erhält ihre Fähigkeiten und ihr Selbstwertgefühl', ok: true, info: 'Richtig: aktivierende, ressourcenorientierte Pflege. Du unterstützt nur, wo sie es braucht.' },
@@ -849,14 +857,14 @@ async function szene7() {
     { label: 'Einfach mit dem Rücken anfangen', k: 'still' }]);
   pkt('wuerde', rk.k === 'sag', 'Berührung angekündigt'); badStatus.rk = rk.k;
   if (rk.k === 'sag') { await say('engel', 'Ja, da komm ich nicht mehr hin. Danke.', 'engel_ruecken_danke'); log.push('Rücken: vorher angekündigt'); }
-  else { await say('engel', 'Hui! Sagen Sie’s doch vorher!', 'engel_ruecken_schreck'); log.push('Rücken: ohne Ankündigung angefangen, Frau Engel hat sich erschreckt'); if (mood === 'gut') mood = 'müde'; }
+  else { engelGefuehl('scham'); await say('engel', 'Hui! Sagen Sie’s doch vorher!', 'engel_ruecken_schreck'); log.push('Rücken: ohne Ankündigung angefangen, Frau Engel hat sich erschreckt'); if (mood === 'gut') mood = 'müde'; }
   await sleep(3000); wasser.pause();
   if (!fensterZu || !warm) {
-    sicht(false, 0.7); await say('engel', 'Na also. Geht doch. … Huch, mir ist kalt.', 'engel_kalt');
+    sicht(false, 0.7); engelGefuehl('frieren'); await say('engel', 'Na also. Geht doch. … Huch, mir ist kalt.', 'engel_kalt');
     const k = await choose([
       { label: 'Ein Handtuch über die Schultern, nur frei machen, was du gerade wäschst', k: 'tuch' },
       { label: '„Wir sind gleich fertig.“', k: 'gleich' }]);
-    sicht(false);
+    sicht(false); engelGefuehl(k.k === 'tuch' ? null : 'frieren');
     if (k.k === 'tuch') { note('Frau Engel zieht das Handtuch enger um sich. Es geht besser.'); log.push('Kälte: Handtuch über die Schultern gelegt'); }
     else { note('Frau Engel zittert. Frieren und Scham gehören zusammen.'); log.push('Kälte: nur vertröstet'); mood = 'misstrauisch'; }
     await sleep(3000);
