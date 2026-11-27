@@ -190,7 +190,7 @@ function addWindow(room, { u, v, vfov, aspect, src, dist }) {
 }
 
 // ---------- Blickführung: was wurde angesehen? ----------
-const seen = new Set(), gazeTime = {};
+const seen = new Set(), gazeTime = {}; window.__seen = seen;
 let hotspots = [];
 const dirOf = (u, v) => { const lon = (u - 0.5) * 2 * Math.PI, lat = (0.5 - v) * Math.PI; return new THREE.Vector3(Math.sin(lon) * Math.cos(lat), Math.sin(lat), -Math.cos(lon) * Math.cos(lat)); };
 const fwd = new THREE.Vector3();
@@ -198,7 +198,7 @@ function trackGaze(dt) {
   camera.getWorldDirection(fwd);
   for (const h of hotspots) {
     const ang = fwd.angleTo(dirOf(h.u, h.v)) * 180 / Math.PI;
-    if (ang < (h.r || 9)) { gazeTime[h.id] = (gazeTime[h.id] || 0) + dt; if (gazeTime[h.id] > 1.8) seen.add(h.id); }
+    if (ang < (h.r || 9)) { gazeTime[h.id] = (gazeTime[h.id] || 0) + dt; if (gazeTime[h.id] > (h.t || 1.8)) seen.add(h.id); }
   }
 }
 
@@ -752,13 +752,13 @@ async function szene6() {
   await waitMarker();
 }
 const BAD_DINGE = [
-  { id: 'fenster', u: 0.33, v: 0.30, r: 9, name: 'Gekipptes Fenster, es zieht' },
-  { id: 'heizung', u: 0.335, v: 0.60, r: 9, name: 'Heizung mit Handtuch' },
-  { id: 'seife', u: 0.495, v: 0.56, r: 6, name: 'Ihre eigene Seife' },
-  { id: 'schrank', u: 0.53, v: 0.24, r: 9, name: 'Spiegelschrank' },
-  { id: 'notruf', u: 0.66, v: 0.61, r: 7, name: 'Notrufarmband auf der Waschmaschine' },
-  { id: 'matte', u: 0.42, v: 0.92, r: 10, name: 'Badematte ohne Rutschschutz' },
-  { id: 'badtuer', u: 0.80, v: 0.50, r: 9, name: 'Offene Badezimmertür' }
+  { id: 'fenster', u: 0.33, v: 0.30, r: 14, t: 1, name: 'Gekipptes Fenster, es zieht' },
+  { id: 'heizung', u: 0.335, v: 0.62, r: 14, t: 1, name: 'Heizung mit Handtuch' },
+  { id: 'seife', u: 0.495, v: 0.56, r: 9, t: 1, name: 'Ihre eigene Seife' },
+  { id: 'schrank', u: 0.53, v: 0.24, r: 12, t: 1, name: 'Spiegelschrank' },
+  { id: 'notruf', u: 0.66, v: 0.61, r: 11, t: 1, name: 'Notrufarmband auf der Waschmaschine' },
+  { id: 'matte', u: 0.42, v: 0.92, r: 16, t: 1, name: 'Badematte ohne Rutschschutz' },
+  { id: 'badtuer', u: 0.86, v: 0.50, r: 16, t: 1, name: 'Offene Badezimmertür' }
 ];
 // Frau Engel im Bad: lebendiges Video, bei starken Gefühlen ein passendes Standbild
 let gefuehl = null;
