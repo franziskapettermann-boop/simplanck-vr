@@ -364,6 +364,7 @@ function tryMarker(origin, dir) {
   const live = markers.filter(m => m.obj.visible);
   const hits = ray.intersectObjects(live.flatMap(m => [m.hit, m.ring]), false); if (!hits.length) return false;
   const m = markers.find(k => k.hit === hits[0].object || k.ring === hits[0].object);
+  if (m.aktion) { klick(); markers = markers.filter(x => x !== m); m.obj.parent?.remove(m.obj); m.aktion(); return true; }
   const r = markerResolve; markerResolve = null; setMarkers(current, []); r?.(m.go); return true;
 }
 function pulseMarkers(t) { markers.forEach(m => { const s = 1 + 0.12 * Math.sin(t * 3); m.ring.scale.set(s, s, s); if (m.needs) m.obj.visible = seen.has(m.needs); if (m.ding) { camera.getWorldPosition(camPos); m.obj.lookAt(camPos); } }); }
@@ -752,137 +753,143 @@ async function szene6() {
 }
 const BAD_DINGE = [
   { id: 'fenster', u: 0.33, v: 0.30, r: 9, name: 'Gekipptes Fenster, es zieht' },
+  { id: 'heizung', u: 0.335, v: 0.60, r: 9, name: 'Heizung mit Handtuch' },
+  { id: 'seife', u: 0.495, v: 0.56, r: 6, name: 'Ihre eigene Seife' },
+  { id: 'schrank', u: 0.53, v: 0.24, r: 9, name: 'Spiegelschrank' },
   { id: 'notruf', u: 0.66, v: 0.61, r: 7, name: 'Notrufarmband auf der Waschmaschine' },
   { id: 'matte', u: 0.42, v: 0.92, r: 10, name: 'Badematte ohne Rutschschutz' },
   { id: 'badtuer', u: 0.80, v: 0.50, r: 9, name: 'Offene Badezimmertür' }
 ];
 // Frau Engel im Bad: lebendiges Video, bei starken Gefühlen ein passendes Standbild
+let gefuehl = null;
 function engelGefuehl(name) {
-  const bad = rooms.bad; if (!bad?.leben) return;
+  gefuehl = name; const bad = rooms.bad; if (!bad?.leben) return;
   Object.values(bad.bilder).forEach(b => b.visible = false);
   if (!name) { bad.leben.visible = true; bad.rest.visible = true; return; }
   if (!bad.bilder[name]) { bad.bilder[name] = addBild(bad, { u: 0.46, v: 0.6, hfov: 95, aspect: 16 / 9, src: `figur/engel_bad_${name}.png`, cx: 1004, cy: 875.5, w: 946, h: 1471 }); bad.engel.add(bad.bilder[name]); }
   bad.bilder[name].visible = true; bad.leben.visible = false; bad.rest.visible = false;
 }
 async function szene7() {
-  // Im Bad: Intimsphäre, Kälte, Selbstständigkeit, Notruf
+  // Im Bad: Intimsphäre, Kälte, Selbstständigkeit, Notruf. Dinge im Raum sind jederzeit antippbar.
   const bad = await buildRoom('bad');
   if (!bad.engel) {
     bad.engel = new THREE.Group(); bad.group.add(bad.engel);
     const rest = addBild(bad, { u: 0.46, v: 0.6, hfov: 95, aspect: 16 / 9, src: 'figur/engel_bad_rest.png', cx: 531 + 64.5, cy: 875.5, w: 129, h: 1471 });
-    const leben = addVideoBild(bad, { u: 0.46, v: 0.6, hfov: 95, src: 'figur/engel_bad_leben.mp4', cx: 1010, cy: 873, w: 820, h: 1460 });
+    const leben = addVideoBild(bad, { u: 0.46, v: 0.6, hfov: 95, src: 'figur/engel_bad_leben.mp4?v=2', cx: 1010, cy: 873, w: 820, h: 1460 });
     bad.engel.add(rest, leben); bad.leben = leben; bad.rest = rest; bad.bilder = {};
   }
   await goRoom('bad', 0.47, STAND, 0.3); hotspots = BAD_DINGE;
   const strasse = playTon('sfx_strasse', 0.35, true);
-  let fensterZu = false, tuerZu = false, warm = false;
-  note('Frau Engel sitzt auf dem Hocker am Waschbecken. Den Bademantel hat sie ausgezogen, ein Handtuch liegt über ihren Schultern. Durchs gekippte Fenster zieht es, draußen rauscht der Verkehr.');
-  await sleep(6000);
-  await say('engel', 'Muss die Tür offen sein?', 'engel_tuer_offen');
-  setMarkers(current, [{ u: 0.86, v: 0.53, label: 'Tür schließen', go: 'tuer', ding: true }]);
-  const t0 = await waitAny([{ label: 'Die Tür schließen: „Nein, ich mach sie zu.“', k: 'zu' }, { label: '„Nur kurz, dann geht’s schneller.“', k: 'offen' }, { label: 'Nichts sagen und anfangen', k: 'nix' }]);
-  if (t0.go === 'tuer' || t0.c?.k === 'zu') { tuerZu = true; playTon('sfx_badtuer', 0.7); log.push('Bad: Tür geschlossen, Intimsphäre geschützt'); }
-  else { engelGefuehl('scham'); await say('engel', 'Ich steh doch da nicht nackig rum!', 'engel_nackig'); mood = 'misstrauisch'; log.push('Bad: Tür offen gelassen, obwohl Frau Engel gefragt hat'); }
-  if (tuerZu && mood !== 'misstrauisch') await say('engel', 'Na gut …', 'engel_naguat');
-  pkt('wuerde', tuerZu, 'Badtür geschlossen');
-  await warum('Warum ist es wichtig, ob die Badtür zu ist?', [
-    { t: 'Intimsphäre: Sich vor Fremden auszuziehen ist mit viel Scham verbunden', ok: true, info: 'Ja. Die Tür zu, nur frei machen, was gerade gewaschen wird: So bleibt ihre Würde gewahrt.' },
-    { t: 'Damit keine Wärme verloren geht', ok: false, info: 'Auch das, aber der Hauptgrund ist ein anderer. Wie würdest du dich fühlen, halb nackt bei offener Tür?' },
-    { t: 'Weil es im Standard so steht', ok: false, info: 'Ein Standard erklärt nicht, warum. Denk an Frau Engels Gefühl.' }], 'wuerde');
-  // Vorbereiten: im Raum antippen. Frau Engel sitzt mit freiem Oberkörper da, die Zeit läuft.
-  note('Bereite alles vor: Tippe im Bad an, was du tun willst. Frau Engel sitzt mit freiem Oberkörper da und wartet.');
-  const DINGE = [
-    { u: 0.33, v: 0.30, label: 'Fenster', go: 'fenster', ding: true },
-    { u: 0.335, v: 0.60, label: 'Handtuch', go: 'warm', ding: true },
-    { u: 0.505, v: 0.60, label: 'Wasser', go: 'wasser', ding: true },
-    { u: 0.42, v: 0.88, label: 'Badematte', go: 'matte', ding: true },
-    { u: 0.66, v: 0.61, label: 'Armband', go: 'notruf', ding: true }];
-  const erledigt = new Set(); let temp = null, prepFertig = false;
+  let fensterZu = false, tuerZu = false, warm = false, matte = false, seife = false, temp = null, waschtSchon = false, fertig = false;
+  const tuerSchliessen = (wie) => { if (tuerZu) return; tuerZu = true; playTon('sfx_badtuer', 0.7); if (gefuehl === 'scham') engelGefuehl(null); log.push('Bad: Tür geschlossen' + (wie ? ' (' + wie + ')' : '')); };
+  const AKTIONEN = [
+    { u: 0.86, v: 0.53, label: 'Tür', needs: 'badtuer', ding: true, aktion: () => { tuerSchliessen('selbst bemerkt'); note('Du schließt die Badtür.'); } },
+    { u: 0.33, v: 0.30, label: 'Fenster', needs: 'fenster', ding: true, aktion: () => { fensterZu = true; strasse.volume = 0.06; sicht(false); if (gefuehl === 'frieren') engelGefuehl(null); note('Du schließt das Fenster. Es wird ruhiger.'); log.push('Bad: Fenster geschlossen'); } },
+    { u: 0.335, v: 0.60, label: 'Heizung', needs: 'heizung', ding: true, aktion: () => { warm = true; note('Du legst ein frisches Handtuch zum Anwärmen auf die Heizung.'); log.push('Bad: Handtuch auf der Heizung angewärmt'); } },
+    { u: 0.42, v: 0.88, label: 'Badematte', needs: 'matte', ding: true, aktion: () => { matte = true; note('Die Matte rutscht auf den Fliesen. Du legst sie zur Seite.'); log.push('Bad: rutschige Badematte weggelegt'); } },
+    { u: 0.495, v: 0.56, label: 'Seife', needs: 'seife', ding: true, aktion: () => { seife = true; note('Ihre eigene Seife, sie riecht nach Lavendel. Du legst sie bereit.'); log.push('Bad: ihre eigene Seife bereitgelegt'); } },
+    { u: 0.53, v: 0.24, label: 'Schrank', needs: 'schrank', ding: true, aktion: () => note('Im Spiegelschrank: Zahnpasta, Hautcreme, ein Kamm, eine Packung Tabletten.') },
+    { u: 0.66, v: 0.61, label: 'Armband', needs: 'notruf', ding: true, aktion: () => { seen.add('armband_bereit'); note('Ein Notrufarmband. Du legst es neben das Waschbecken.'); } }];
+  setMarkers(current, AKTIONEN);
+  note('Frau Engel sitzt auf dem Hocker am Waschbecken und wartet. Was du länger anschaust, kannst du antippen.');
   const tStart = performance.now();
-  (async () => { // Kälte und Ungeduld, wenn es zu lange dauert
-    let gezogen = false, gedrängt = false;
-    while (!prepFertig) {
+  (async () => { // Zug und Ungeduld laufen im Hintergrund mit
+    let gezogen = false, gedraengt = false;
+    while (!fertig) {
       const sek = (performance.now() - tStart) / 1000;
-      if (!gezogen && sek > 18 && !fensterZu) { gezogen = true; seen.add('zug'); sicht(false, 0.4); engelGefuehl('frieren'); await say('engel', 'Brrr … das zieht aber. Mir wird kalt.', 'engel_zieht'); }
-      if (!gedrängt && sek > 55) { gedrängt = true; log.push('Bad: Vorbereitung hat lange gedauert, Frau Engel saß halb nackt und wartete'); await say('engel', 'Wie lang dauert das denn noch? Ich sitz hier halb nackig.', 'engel_dauert'); }
+      if (!gezogen && sek > 30 && !fensterZu) { gezogen = true; seen.add('zug'); sicht(false, 0.4); engelGefuehl('frieren'); await say('engel', 'Brrr … das zieht aber. Mir wird kalt.', 'engel_zieht'); }
+      if (!gedraengt && sek > 80 && !waschtSchon) { gedraengt = true; log.push('Bad: lange gewartet, Frau Engel saß halb nackt'); await say('engel', 'Wie lang dauert das denn noch? Ich sitz hier halb nackig.', 'engel_dauert'); }
       await sleep(500);
     }
   })();
-  while (true) {
-    setMarkers(current, [...DINGE.filter(d => !erledigt.has(d.go)), ...(tuerZu ? [] : [{ u: 0.86, v: 0.53, label: 'Tür schließen', go: 'tuer', ding: true }])]);
-    const r = await waitAny([{ label: 'Alles bereit, jetzt anfangen', k: 'los' }]);
-    if (r.c) { if (!erledigt.has('wasser')) { note('Ohne Wasser geht es nicht. Was fehlt noch?'); await sleep(2200); continue; } break; }
-    const d = r.go; erledigt.add(d);
-    if (d === 'tuer') { tuerZu = true; engelGefuehl(null); playTon('sfx_badtuer', 0.7); note('Du schließt die Tür. Frau Engel atmet hörbar auf.'); log.push('Bad: Tür nachträglich geschlossen'); }
-    if (d === 'fenster') { fensterZu = true; sicht(false); engelGefuehl(null); strasse.volume = 0.06; note('Das Fenster ist zu. Es wird ruhiger.'); log.push('Bad vorbereitet: Fenster geschlossen'); }
-    if (d === 'warm') { warm = true; note('Du legst ein frisches Handtuch auf die Heizung. Nachher ist es warm.'); log.push('Bad vorbereitet: Handtuch auf der Heizung angewärmt'); }
-    if (d === 'matte') { note('Die Matte rutscht auf den Fliesen. Du legst sie zur Seite.'); log.push('Bad vorbereitet: rutschige Badematte weggelegt'); }
-    if (d === 'notruf') { seen.add('notruf'); note('Das Notrufarmband liegt auf der Waschmaschine. Darum kümmerst du dich nach dem Waschen.'); }
-    if (d === 'wasser') {
-      const c = await choose([
-        { label: 'Wasser einlassen, Frau Engel die Temperatur fühlen lassen', k: 'sie' },
-        { label: 'Wasser einlassen, selbst kurz mit der Hand prüfen', k: 'ich' },
-        { label: 'Richtig heißes Wasser, damit sie nicht friert', k: 'heiss' }]);
-      const w = playTon('sfx_bad_wasser', 0.5, true); await sleep(2500); w.pause();
-      temp = c.k;
-      if (c.k === 'sie') { await say('engel', 'Ja, so ist’s recht. Nicht zu heiß.', 'engel_temp_ok'); log.push('Wasser: Temperatur von Frau Engel prüfen lassen'); }
-      if (c.k === 'ich') { note('Für deine Hand ist es angenehm. Frau Engel sagt nichts dazu.'); log.push('Wasser: Temperatur nur selbst geprüft'); await sleep(2500); }
-      pkt('waerme', c.k === 'sie', 'Wassertemperatur');
-      if (c.k === 'heiss') { dampf(current, 0.505, 0.62); await say('engel', 'Au! Das ist ja viel zu heiß!', 'engel_heiss'); note('Du lässt kaltes Wasser nachlaufen.'); mood = 'misstrauisch'; log.push('Wasser: zu heiß, Frau Engel hat sich erschreckt'); await sleep(2000); }
+  await sleep(9000);
+  // Die Tür (falls noch offen)
+  if (!tuerZu) {
+    await say('engel', 'Muss die Tür offen sein?', 'engel_tuer_offen');
+    if (!tuerZu) {
+      const t = await choose([
+        { label: '„Nein, ich mach sie gleich zu.“', k: 'zu' },
+        { label: '„Ich lass sie einen Spalt offen, falls Sie mich rufen wollen.“', k: 'spalt' },
+        { label: '„Stört es Sie, wenn sie offen ist?“', k: 'frage' }]);
+      if (t.k === 'zu') tuerSchliessen('auf ihre Frage');
+      else if (!tuerZu) { engelGefuehl('scham'); await say('engel', 'Ich steh doch da nicht nackig rum!', 'engel_nackig'); if (t.k === 'spalt') mood = 'misstrauisch'; log.push('Bad: Tür blieb offen, obwohl Frau Engel gefragt hat'); }
     }
-    await sleep(1800);
   }
-  prepFertig = true; setMarkers(current, []); if (fensterZu) engelGefuehl(null);
-  Object.assign(badStatus, { tuerZu, fensterZu, warm, temp, matte: erledigt.has('matte') });
-  pkt('waerme', fensterZu, 'Fenster geschlossen'); pkt('waerme', warm, 'Handtuch angewärmt');
-  pkt('sicherheit', erledigt.has('matte'), 'Rutschige Badematte weggelegt');
-  if (temp) await warum('Warum soll Frau Engel die Wassertemperatur mitprüfen?', [
+  // Wie anfangen?
+  const a0 = await choose([
+    { label: 'Fragen, wie sie sich sonst wäscht und womit sie anfangen möchte', k: 'frag' },
+    { label: 'Gleich Wasser einlassen, damit sie nicht lange warten muss', k: 'wasser' },
+    { label: 'Erklären, wie du es gelernt hast: von oben nach unten', k: 'lehrbuch' }]);
+  pkt('selbst', a0.k === 'frag', 'Gefragt, wie sie es gewohnt ist');
+  if (a0.k === 'frag') { await say('engel', 'Na ja … den Rücken krieg ich nicht mehr hin. Und die Füße auch nicht. Aber das Gesicht, das mach ich selber!', 'engel_ruecken'); heardRuecken = true; }
+  else { note('Frau Engel nickt nur und wartet.'); await sleep(2500); }
+  // Wasser
+  const c = await choose([
+    { label: 'Wasser einlassen und Frau Engel mit der Hand fühlen lassen', k: 'sie' },
+    { label: 'Wasser einlassen und mit dem Handgelenk prüfen, wie bei einem Baby', k: 'ich' },
+    { label: 'Gut warmes Wasser einlassen, sie friert ja schnell', k: 'heiss' }]);
+  const wl = playTon('sfx_bad_wasser', 0.5, true); await sleep(2500); wl.pause();
+  temp = c.k; pkt('waerme', c.k === 'sie', 'Wassertemperatur');
+  if (c.k === 'sie') { await say('engel', 'Ja, so ist’s recht. Nicht zu heiß.', 'engel_temp_ok'); log.push('Wasser: Temperatur von Frau Engel prüfen lassen'); }
+  if (c.k === 'ich') { note('Für dein Handgelenk ist es angenehm. Frau Engel sagt nichts dazu.'); log.push('Wasser: Temperatur nur selbst geprüft'); await sleep(2500); }
+  if (c.k === 'heiss') { dampf(current, 0.505, 0.62); await say('engel', 'Au! Das ist ja viel zu heiß!', 'engel_heiss'); note('Du lässt kaltes Wasser nachlaufen.'); mood = 'misstrauisch'; log.push('Wasser: zu heiß, Frau Engel hat sich erschreckt'); await sleep(2000); }
+  await warum('Warum soll Frau Engel die Wassertemperatur mitprüfen?', [
     { t: 'Sie entscheidet mit, was angenehm ist, und ich prüfe zusätzlich selbst', ok: true, info: 'Genau. Mitbestimmen erhält ihre Kontrolle. Und weil das Wärmeempfinden im Alter nachlassen kann, prüfst du zusätzlich selbst.' },
-    { t: 'Ältere Haut verträgt Hitze besser', ok: false, info: 'Im Gegenteil: Haut wird im Alter dünner und verbrüht leichter.' },
-    { t: 'Damit ich nicht schuld bin, wenn es zu heiß ist', ok: false, info: 'Es geht nicht um Schuld, sondern um ihr Wohlbefinden und ihre Sicherheit.' }], 'waerme');
+    { t: 'Ältere Haut verträgt Wärme besser, da reicht mein Gefühl', ok: false, info: 'Im Gegenteil: Haut wird im Alter dünner und verbrüht leichter.' },
+    { t: 'Damit sie sich nicht beschwert, wenn es nicht passt', ok: false, info: 'Es geht nicht darum, Beschwerden zu vermeiden, sondern um ihr Wohlbefinden und ihre Sicherheit.' }], 'waerme');
+  // Waschen
+  waschtSchon = true;
   const w = await choose([
-    { label: 'Ihr den Waschlappen reichen, das Gesicht wäscht sie selbst', k: 'selbst' },
-    { label: 'Alles selbst waschen, dann geht es schneller', k: 'alles' }]);
+    { label: 'Ihr den warmen Waschlappen reichen und abwarten', k: 'selbst' },
+    { label: 'Das Gesicht zuerst selbst gründlich waschen, damit es ordentlich wird', k: 'alles' }]);
   waschK = w.k; pkt('selbst', w.k === 'selbst', 'Gesicht selbst waschen lassen');
   const wasser = playTon('sfx_bad_wasser', 0.5, true);
   if (w.k === 'selbst') { note('Frau Engel wäscht sich das Gesicht selbst, langsam und gründlich.'); log.push('Waschen: Gesicht selbst gelassen'); }
-  else { engelGefuehl('scham'); note('Du nimmst ihr den Waschlappen aus der Hand. Frau Engel lässt es geschehen und schaut weg.'); mood = 'misstrauisch'; log.push('Waschen: alles übernommen, obwohl sie das Gesicht selbst waschen wollte'); }
+  else { engelGefuehl('scham'); note('Du nimmst ihr den Waschlappen aus der Hand. Frau Engel lässt es geschehen und schaut weg.'); mood = 'misstrauisch'; log.push('Waschen: Gesicht übernommen, obwohl sie es selbst kann'); }
   await sleep(5000);
   await warum('Warum lässt man Frau Engel das Gesicht selbst waschen?', [
     { t: 'Was sie selbst kann, soll sie selbst tun. Das erhält ihre Fähigkeiten und ihr Selbstwertgefühl', ok: true, info: 'Richtig: aktivierende, ressourcenorientierte Pflege. Du unterstützt nur, wo sie es braucht.' },
-    { t: 'Damit die Pflege weniger Arbeit hat', ok: false, info: 'Es dauert oft sogar länger. Der Grund ist ein anderer.' },
-    { t: 'Weil das Gesicht nicht so wichtig ist', ok: false, info: 'Das Gesicht ist genauso wichtig. Es geht darum, was sie noch selbst kann.' }], 'selbst');
+    { t: 'Damit sie sich beschäftigt fühlt, während ich den Rest vorbereite', ok: false, info: 'Es geht nicht ums Beschäftigen. Was erhält es bei ihr?' },
+    { t: 'Weil ich beim Gesicht leichter etwas falsch machen kann', ok: false, info: 'Das ist nicht der Grund. Denk daran, was sie noch selbst kann.' }], 'selbst');
   const rk = await choose([
-    { label: 'Ankündigen: „Ich wasche jetzt Ihren Rücken.“', k: 'sag' },
-    { label: 'Einfach mit dem Rücken anfangen', k: 'still' }]);
+    { label: 'Fragen: „Darf ich Ihnen jetzt den Rücken waschen?“', k: 'sag' },
+    { label: 'Zügig den Rücken waschen, damit sie nicht so lange friert', k: 'still' }]);
   pkt('wuerde', rk.k === 'sag', 'Berührung angekündigt'); badStatus.rk = rk.k;
-  if (rk.k === 'sag') { await say('engel', 'Ja, da komm ich nicht mehr hin. Danke.', 'engel_ruecken_danke'); log.push('Rücken: vorher angekündigt'); }
-  else { engelGefuehl('scham'); await say('engel', 'Hui! Sagen Sie’s doch vorher!', 'engel_ruecken_schreck'); log.push('Rücken: ohne Ankündigung angefangen, Frau Engel hat sich erschreckt'); if (mood === 'gut') mood = 'müde'; }
+  if (rk.k === 'sag') { await say('engel', 'Ja, da komm ich nicht mehr hin. Danke.', 'engel_ruecken_danke'); log.push('Rücken: vorher gefragt'); if (gefuehl === 'scham') engelGefuehl(null); }
+  else { engelGefuehl('scham'); await say('engel', 'Hui! Sagen Sie’s doch vorher!', 'engel_ruecken_schreck'); log.push('Rücken: ohne Ankündigung, Frau Engel hat sich erschreckt'); if (mood === 'gut') mood = 'müde'; }
   await sleep(3000); wasser.pause();
   if (!fensterZu || !warm) {
     sicht(false, 0.7); engelGefuehl('frieren'); await say('engel', 'Na also. Geht doch. … Huch, mir ist kalt.', 'engel_kalt');
     const k = await choose([
-      { label: 'Ein Handtuch über die Schultern, nur frei machen, was du gerade wäschst', k: 'tuch' },
-      { label: '„Wir sind gleich fertig.“', k: 'gleich' }]);
+      { label: warm ? 'Das warme Handtuch von der Heizung um ihre Schultern legen' : 'Das Handtuch um ihre Schultern legen, nur den Rücken frei lassen', k: 'tuch' },
+      { label: 'Schneller weitermachen, damit es bald vorbei ist', k: 'gleich' }]);
     sicht(false); engelGefuehl(k.k === 'tuch' ? null : 'frieren');
     if (k.k === 'tuch') { note('Frau Engel zieht das Handtuch enger um sich. Es geht besser.'); log.push('Kälte: Handtuch über die Schultern gelegt'); }
-    else { note('Frau Engel zittert. Frieren und Scham gehören zusammen.'); log.push('Kälte: nur vertröstet'); mood = 'misstrauisch'; }
+    else { note('Frau Engel zittert. Frieren und Scham gehören zusammen.'); log.push('Kälte: nur schneller gemacht'); mood = 'misstrauisch'; }
     await sleep(3000);
-  } else { note('Das warme Handtuch tut Frau Engel sichtlich gut. „Na also. Geht doch.“'); await sleep(3500); }
+  } else { note('Das warme Handtuch tut Frau Engel sichtlich gut.'); await sleep(3000); }
   // Notruf
-  note(seen.has('notruf') ? 'Das Notrufarmband liegt noch auf der Waschmaschine.' : 'Jana fragt beim Abschied: „Und das Notrufarmband?“ Es liegt auf der Waschmaschine.');
-  await sleep(3000);
+  note(seen.has('armband_bereit') ? 'Das Notrufarmband liegt neben dem Waschbecken.' : 'Auf der Waschmaschine liegt ein Notrufarmband.');
+  await sleep(2500);
   await say('engel', 'Das Ding stört beim Waschen. Und eigentlich auch sonst.', 'engel_notruf_stoert');
   await ownWords('Was sagst du zum Notrufarmband?');
   const n = await choose([
-    { label: 'Erklären, wofür es da ist, und fragen, ob du es ihr wieder anlegen darfst', k: 'fragen' },
-    { label: 'Es ihr einfach wieder ums Handgelenk machen', k: 'einfach' },
-    { label: 'Liegen lassen, es ist ihre Entscheidung', k: 'liegen' }]);
+    { label: 'Erklären, wofür es da ist, und fragen, ob sie es wieder tragen möchte', k: 'fragen' },
+    { label: 'Es ihr gleich wieder anlegen, damit es nicht vergessen wird', k: 'einfach' },
+    { label: 'Liegen lassen, sie hat ja gesagt, dass es stört', k: 'liegen' }]);
+  fertig = true; setMarkers(current, []);
   strasse.pause(); notrufK = n.k; pkt('sicherheit', n.k === 'fragen', 'Notrufarmband mit Einverständnis angelegt');
+  Object.assign(badStatus, { tuerZu, fensterZu, warm, temp, matte });
+  pkt('wuerde', tuerZu, 'Badtür geschlossen'); pkt('waerme', fensterZu, 'Fenster geschlossen'); pkt('waerme', warm, 'Handtuch angewärmt');
+  pkt('sicherheit', matte, 'Rutschige Badematte weggelegt'); if (seife) pkt('selbst', true, 'Ihre eigene Seife benutzt');
   if (n.k === 'fragen') { engelGefuehl('froh'); await say('engel', 'Na, wenn Sie meinen … Machen Sie’s mir halt dran. … Kommen Sie morgen wieder?', 'engel_notruf_ok'); log.push('Notruf: erklärt, gefragt und mit Einverständnis angelegt');
     await say('engel', 'Das ist gut, dann vergess ich’s nicht. … Na, so schlimm war’s ja gar nicht mit Ihnen.', 'engel_abschied'); }
   if (n.k === 'einfach') { engelGefuehl('scham'); await say('engel', 'Jetzt fangen Sie auch noch an wie meine Tochter.', 'engel_wie_tochter'); log.push('Notruf: ohne zu fragen angelegt'); }
-  if (n.k === 'liegen') { note('Das Armband bleibt auf der Waschmaschine. Wenn Frau Engel heute stürzt, kann sie keine Hilfe rufen.'); log.push('Notruf: liegen gelassen, Sturzrisiko ohne Hilferuf'); await sleep(3500); }
+  if (n.k === 'liegen') { note('Das Armband bleibt liegen. Wenn Frau Engel heute stürzt, kann sie keine Hilfe rufen.'); log.push('Notruf: liegen gelassen, Sturzrisiko ohne Hilferuf'); await sleep(3500); }
+  await warum('Warum ist es wichtig, ob die Badtür zu ist?', [
+    { t: 'Intimsphäre: Sich vor Fremden auszuziehen ist mit viel Scham verbunden', ok: true, info: 'Ja. Tür zu, nur frei machen, was gerade gewaschen wird: So bleibt ihre Würde gewahrt.' },
+    { t: 'Damit die Wärme im Bad bleibt', ok: false, info: 'Auch das, aber der Hauptgrund ist ein anderer. Wie würdest du dich fühlen, halb nackt bei offener Tür?' },
+    { t: 'Damit man draußen im Flur nichts hört', ok: false, info: 'Es geht um mehr als Geräusche. Denk an Frau Engels Gefühl.' }], 'wuerde');
   await sleep(800);
 }
 const mischen = a => a.map(x => [Math.random(), x]).sort((p, q) => p[0] - q[0]).map(x => x[1]);
