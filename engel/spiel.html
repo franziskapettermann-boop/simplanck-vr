@@ -771,6 +771,8 @@ const BAD_DINGE = [
 ];
 // Frau Engel im Bad: lebendiges Video, bei starken Gefühlen ein passendes Standbild
 let gefuehl = null;
+const FENSTER_ZU_BILD = { u: 0.33, v: 0.36, hfov: 80.08, aspect: 1, src: 'figur/bad_fenster_zu.png?v=1', cx: 960, cy: 540, w: 1600, h: 1200 };
+function zeigeFensterZu() { const bad = rooms.bad; if (!bad || bad.fensterZuBild) return; bad.fensterZuBild = addBild(bad, FENSTER_ZU_BILD); }
 function zeigeTuerZu() { const bad = rooms.bad; if (!bad || bad.tuerZuBild) return; bad.tuerZuBild = addBild(bad, TUER_ZU_BILD); }
 const TUER_ZU_BILD = { u: 0.85, v: 0.50, hfov: 128.66, aspect: 1, src: 'figur/bad_tuer_zu.png?v=2', cx: 960, cy: 540, w: 1100, h: 1650 };
 function engelGefuehl(name) {
@@ -794,8 +796,8 @@ async function szene7() {
   let fensterZu = false, tuerZu = false, warm = false, matte = false, seife = false, temp = null, waschtSchon = false, fertig = false;
   const tuerSchliessen = (wie) => { if (tuerZu) return; tuerZu = true; playTon('sfx_badtuer', 0.7); zeigeTuerZu(); if (gefuehl === 'scham') engelGefuehl(null); log.push('Bad: Tür geschlossen' + (wie ? ' (' + wie + ')' : '')); };
   const AKTIONEN = [
-    { u: 0.90, v: 0.50, label: 'Tür', needs: 'badtuer', ding: true, aktion: () => { tuerSchliessen('selbst bemerkt'); note('Du schließt die Badtür.'); } },
-    { u: 0.33, v: 0.36, label: 'Fenster', needs: 'fenster', ding: true, aktion: () => { fensterZu = true; strasse.volume = 0.06; sicht(false); if (gefuehl === 'frieren') engelGefuehl(null); note('Du schließt das Fenster. Es wird ruhiger.'); log.push('Bad: Fenster geschlossen'); } },
+    { u: 0.90, v: 0.50, label: 'Tür', needs: 'badtuer', ding: true, aktion: () => { if (tuerZu) return; tuerSchliessen('selbst bemerkt'); note('Du schließt die Badtür.'); } },
+    { u: 0.33, v: 0.36, label: 'Fenster', needs: 'fenster', ding: true, aktion: () => { if (fensterZu) return; fensterZu = true; zeigeFensterZu(); playTon('sfx_badtuer', 0.35); strasse.volume = 0.06; sicht(false); if (gefuehl === 'frieren') engelGefuehl(null); note('Du schließt das Fenster. Es wird ruhiger.'); log.push('Bad: Fenster geschlossen'); } },
     { u: 0.34, v: 0.62, label: 'Heizung', needs: 'heizung', ding: true, aktion: () => { warm = true; note('Du legst ein frisches Handtuch zum Anwärmen auf die Heizung.'); log.push('Bad: Handtuch auf der Heizung angewärmt'); } },
     { u: 0.42, v: 0.88, label: 'Badematte', needs: 'matte', ding: true, aktion: () => { matte = true; note('Die Matte rutscht auf den Fliesen. Du legst sie zur Seite.'); log.push('Bad: rutschige Badematte weggelegt'); } },
     { u: 0.466, v: 0.56, label: 'Seife', needs: 'seife', ding: true, aktion: () => { seife = true; note('Ihre eigene Seife, sie riecht nach Lavendel. Du legst sie bereit.'); log.push('Bad: ihre eigene Seife bereitgelegt'); } },
@@ -827,6 +829,7 @@ async function szene7() {
     }
   }
   // Wie anfangen?
+  note('Frau Engel sitzt bereit. Wie fängst du an?');
   const a0 = await choose([
     { label: 'Fragen, wie sie sich sonst wäscht und womit sie anfangen möchte', k: 'frag' },
     { label: 'Gleich Wasser einlassen, damit sie nicht lange warten muss', k: 'wasser' },
@@ -835,6 +838,7 @@ async function szene7() {
   if (a0.k === 'frag') { await say('engel', 'Na ja … den Rücken krieg ich nicht mehr hin. Und die Füße auch nicht. Aber das Gesicht, das mach ich selber!', 'engel_ruecken'); heardRuecken = true; }
   else { note('Frau Engel nickt nur und wartet.'); await sleep(2500); }
   // Wasser
+  note('Am Waschbecken: Wie bereitest du das Wasser vor?');
   const c = await choose([
     { label: 'Wasser einlassen und Frau Engel mit der Hand fühlen lassen', k: 'sie' },
     { label: 'Wasser einlassen und mit dem Handgelenk prüfen, wie bei einem Baby', k: 'ich' },
@@ -850,6 +854,7 @@ async function szene7() {
     { t: 'Damit sie sich nicht beschwert, wenn es nicht passt', ok: false, info: 'Es geht nicht darum, Beschwerden zu vermeiden, sondern um ihr Wohlbefinden und ihre Sicherheit.' }], 'waerme');
   // Waschen
   waschtSchon = true;
+  note('Das Wasser ist bereit. Wie geht es weiter?');
   const w = await choose([
     { label: 'Ihr den warmen Waschlappen reichen und abwarten', k: 'selbst' },
     { label: 'Das Gesicht zuerst selbst gründlich waschen, damit es ordentlich wird', k: 'alles' }]);
@@ -862,6 +867,7 @@ async function szene7() {
     { t: 'Was sie selbst kann, soll sie selbst tun. Das erhält ihre Fähigkeiten und ihr Selbstwertgefühl', ok: true, info: 'Richtig: aktivierende, ressourcenorientierte Pflege. Du unterstützt nur, wo sie es braucht.' },
     { t: 'Damit sie sich beschäftigt fühlt, während ich den Rest vorbereite', ok: false, info: 'Es geht nicht ums Beschäftigen. Was erhält es bei ihr?' },
     { t: 'Weil ich beim Gesicht leichter etwas falsch machen kann', ok: false, info: 'Das ist nicht der Grund. Denk daran, was sie noch selbst kann.' }], 'selbst');
+  note('Jetzt ist der Rücken dran.');
   const rk = await choose([
     { label: 'Fragen: „Darf ich Ihnen jetzt den Rücken waschen?“', k: 'sag' },
     { label: 'Zügig den Rücken waschen, damit sie nicht so lange friert', k: 'still' }]);
