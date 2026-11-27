@@ -251,6 +251,14 @@ function choose(list) {
   return new Promise(r => choiceResolve = r);
 }
 function klick() { try { actx = actx || new AudioContext(); const o = actx.createOscillator(), g = actx.createGain(); o.frequency.value = 880; g.gain.setValueAtTime(0.06, actx.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime + 0.08); o.connect(g).connect(actx.destination); o.start(); o.stop(actx.currentTime + 0.09); } catch {} }
+// Auswahl, die sich von selbst erledigt, wenn die Bedingung (z. B. Tür zu) im Raum erfüllt wird
+function chooseOder(list, bedingung, ersatz) {
+  return new Promise(res => {
+    let fertig = false;
+    choose(list).then(c => { if (!fertig) { fertig = true; res(c); } });
+    (async () => { while (!fertig) { if (bedingung()) { fertig = true; $('choices').innerHTML = ''; currentChoices = []; choiceResolve = null; panel.draw(); res(ersatz); } await sleep(200); } })();
+  });
+}
 function pick(i) { const c = currentChoices[i]; if (!c || !choiceResolve) return; klick(); $('choices').innerHTML = ''; currentChoices = []; const r = choiceResolve; choiceResolve = null; panel.draw(); log.push(['Wahl', c.label]); r(c); }
 // Eigene Worte: laut sprechen, wird nur auf dem Gerät aufgenommen. Schreiben nur als Ausweichmöglichkeit.
 let micStream = null, micTried = false;
@@ -763,6 +771,8 @@ const BAD_DINGE = [
 ];
 // Frau Engel im Bad: lebendiges Video, bei starken Gefühlen ein passendes Standbild
 let gefuehl = null;
+function zeigeTuerZu() { const bad = rooms.bad; if (!bad || bad.tuerZuBild) return; bad.tuerZuBild = addBild(bad, TUER_ZU_BILD); }
+const TUER_ZU_BILD = { u: 0.85, v: 0.50, hfov: 128.66, aspect: 1, src: 'figur/bad_tuer_zu.png?v=2', cx: 960, cy: 540, w: 1100, h: 1650 };
 function engelGefuehl(name) {
   gefuehl = name; const bad = rooms.bad; if (!bad?.leben) return;
   Object.values(bad.bilder).forEach(b => b.visible = false);
@@ -782,7 +792,7 @@ async function szene7() {
   await goRoom('bad', 0.47, STAND, 0.3); hotspots = BAD_DINGE;
   const strasse = playTon('sfx_strasse', 0.35, true);
   let fensterZu = false, tuerZu = false, warm = false, matte = false, seife = false, temp = null, waschtSchon = false, fertig = false;
-  const tuerSchliessen = (wie) => { if (tuerZu) return; tuerZu = true; playTon('sfx_badtuer', 0.7); if (gefuehl === 'scham') engelGefuehl(null); log.push('Bad: Tür geschlossen' + (wie ? ' (' + wie + ')' : '')); };
+  const tuerSchliessen = (wie) => { if (tuerZu) return; tuerZu = true; playTon('sfx_badtuer', 0.7); zeigeTuerZu(); if (gefuehl === 'scham') engelGefuehl(null); log.push('Bad: Tür geschlossen' + (wie ? ' (' + wie + ')' : '')); };
   const AKTIONEN = [
     { u: 0.90, v: 0.50, label: 'Tür', needs: 'badtuer', ding: true, aktion: () => { tuerSchliessen('selbst bemerkt'); note('Du schließt die Badtür.'); } },
     { u: 0.33, v: 0.36, label: 'Fenster', needs: 'fenster', ding: true, aktion: () => { fensterZu = true; strasse.volume = 0.06; sicht(false); if (gefuehl === 'frieren') engelGefuehl(null); note('Du schließt das Fenster. Es wird ruhiger.'); log.push('Bad: Fenster geschlossen'); } },
@@ -808,10 +818,10 @@ async function szene7() {
   if (!tuerZu) {
     await say('engel', 'Muss die Tür offen sein?', 'engel_tuer_offen');
     if (!tuerZu) {
-      const t = await choose([
+      const t = await chooseOder([
         { label: '„Nein, ich mach sie gleich zu.“', k: 'zu' },
         { label: '„Ich lass sie einen Spalt offen, falls Sie mich rufen wollen.“', k: 'spalt' },
-        { label: '„Stört es Sie, wenn sie offen ist?“', k: 'frage' }]);
+        { label: '„Stört es Sie, wenn sie offen ist?“', k: 'frage' }], () => tuerZu, { k: 'zu' });
       if (t.k === 'zu') tuerSchliessen('auf ihre Frage');
       else if (!tuerZu) { engelGefuehl('scham'); await say('engel', 'Ich steh doch da nicht nackig rum!', 'engel_nackig'); if (t.k === 'spalt') mood = 'misstrauisch'; log.push('Bad: Tür blieb offen, obwohl Frau Engel gefragt hat'); }
     }
