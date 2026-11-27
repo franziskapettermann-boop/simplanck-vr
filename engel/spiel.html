@@ -58,7 +58,8 @@ const rig = new THREE.Group(); rig.add(camera); scene.add(rig);
 addEventListener('resize', () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); });
 
 const $ = id => document.getElementById(id);
-const sleep = ms => new Promise(r => setTimeout(r, ms));
+const PAAR = new URLSearchParams(location.search).get('paar') === '1';
+const sleep = ms => new Promise(r => setTimeout(r, PAAR && ms >= 1500 ? ms * 0.7 : ms));
 const loadImg = src => new Promise((r, f) => { const i = new Image(); i.crossOrigin = 'anonymous'; i.onload = () => r(i); i.onerror = f; i.src = src; });
 
 // ---------- Räume (360° mit Tiefe) ----------
@@ -274,6 +275,7 @@ function typeWords(prompt) {
   return new Promise(r => $('ownOk').onclick = () => { $('own').style.display = 'none'; const t = $('ownText').value.trim(); log.push(['Eigene Worte', t || '(leer)']); recordings.push({ prompt, text: t }); r(t); });
 }
 async function ownWords(prompt) {
+  if (PAAR) { sub(`<i>${prompt}</i><br>🗣 <b>Sag es laut.</b> Deine Partnerin oder dein Partner hört zu und notiert.`); await choose([{ label: 'Gesagt. Weiter.' }]); log.push(['Eigene Worte', '(laut gesagt)']); return; }
   const vr = renderer.xr.isPresenting, mic = await getMic();
   if (!mic) {
     if (vr) { sub(`<i>${prompt}</i> Sprich es laut aus.`); await choose([{ label: 'Ich habe es laut gesagt. Weiter.' }]); return; }
@@ -554,11 +556,11 @@ async function szene2() {
   offen.door.play();
   await sleep(1200);
   if (!opened) { if (mood === 'gut') await say('engel', 'Ja bitte? … Ach, der Pflegedienst. Meine Tochter hat mir das erzählt.', 'engel_tuer'); else await sayM('engel', { müde: 'Ja … wer ist da?', misstrauisch: 'Ja? … Wer sind Sie? Ich kauf nichts.' }, { müde: 'engel_tuer_muede', misstrauisch: 'engel_tuer_misstr' }); }
-  await ownWords('Was sagst du zur Begrüßung? Danach wählst du, was am nächsten dran ist.');
-  const c = await choose([
-    { label: '„Guten Morgen, Frau Engel. Ich bin … vom Pflegedienst Sonnenhof. Ihre Tochter hat uns gebeten, Sie heute beim Waschen zu unterstützen. Darf ich reinkommen?“', k: 'a' },
-    { label: '„Hallo, ich bin die Neue vom Pflegedienst, zum Waschen!“', k: 'b' },
-    { label: '„Guten Morgen, Frau Engel, wir gehen dann gleich mal ins Bad, ja?“', k: 'c' }]);
+  sub('Frau Engel schaut dich fragend an. Was sagst du?');
+  const c = await mischenWahl([
+    { label: '„Guten Morgen, Frau Engel. Mein Name ist …, ich komme vom Pflegedienst Sonnenhof. Darf ich reinkommen?“', k: 'a' },
+    { label: '„Hallo, ich bin die Neue vom Pflegedienst. Ihre Tochter hat uns geschickt, wir machen heute die Morgenwäsche.“', k: 'b' },
+    { label: '„Guten Morgen, Frau Engel! Ich bin vom Pflegedienst, wir gehen dann gleich zusammen ins Bad, ja?“', k: 'c' }]);
   if (c.k === 'a' && mood !== 'misstrauisch') {
     await say('engel', 'Na, dann kommen Sie halt rein. … Und Sie sind noch mal …?', 'engel_reinkommen');
     const nm = await choose([{ label: 'Freundlich noch einmal den Namen sagen', k: 'ja' }, { label: '„Das hab ich doch gerade gesagt.“', k: 'nein' }, { label: 'Den Ausweis zeigen und den Namen dazu sagen', k: 'ausweis' }]);
@@ -597,7 +599,7 @@ async function szene3() {
     await sleep(7000);
     await sayM('engel', { gut: 'Die Sabine meint ja, ich schaff das nicht mehr allein. Dabei mach ich das hier seit zweiundfünfzig Jahren.', müde: 'Heut ist wieder so ein Tag … alles geht langsam.', misstrauisch: 'Die Sabine hat Sie geschickt, gell? Die macht sich immer gleich Sorgen.' }, { gut: 'engel_sabine_gut', müde: 'engel_tag_muede', misstrauisch: 'engel_sabine_misstr' });
     await sleep(9000);
-    await sayM('engel', { gut: 'Passen Sie auf, hier ist es ein bisschen dunkel. Die Lampe macht’s nicht mehr.', müde: 'Das Licht hier … das muss mal einer richten.', misstrauisch: 'Hier vorne rechts. Nicht in die Küche.' }, { gut: 'engel_licht_gut', müde: 'engel_licht_muede', misstrauisch: 'engel_kueche_misstr' });
+    if (mood === 'misstrauisch') await sayM('engel', { gut: 'Passen Sie auf, hier ist es ein bisschen dunkel. Die Lampe macht’s nicht mehr.', müde: 'Das Licht hier … das muss mal einer richten.', misstrauisch: 'Hier vorne rechts. Nicht in die Küche.' }, { gut: 'engel_licht_gut', müde: 'engel_licht_muede', misstrauisch: 'engel_kueche_misstr' });
   })();
   const FLUR_AKTION = [
     { u: 0.44, v: 0.915, label: 'Läufer', go: 'a_laeufer', ding: true, needs: 'laeufer' },
@@ -849,7 +851,7 @@ async function szene7() {
   if (c.k === 'sie') { await say('engel', 'Ja, so ist’s recht. Nicht zu heiß.', 'engel_temp_ok'); log.push('Wasser: Temperatur von Frau Engel prüfen lassen'); }
   if (c.k === 'ich') { note('Für dein Handgelenk ist es angenehm. Frau Engel sagt nichts dazu.'); log.push('Wasser: Temperatur nur selbst geprüft'); await sleep(2500); }
   if (c.k === 'heiss') { dampf(current, 0.505, 0.62); await say('engel', 'Au! Das ist ja viel zu heiß!', 'engel_heiss'); note('Du lässt kaltes Wasser nachlaufen.'); mood = 'misstrauisch'; log.push('Wasser: zu heiß, Frau Engel hat sich erschreckt'); await sleep(2000); }
-  await warum('Warum soll Frau Engel die Wassertemperatur mitprüfen?', [
+  if (!PAAR) await warum('Warum soll Frau Engel die Wassertemperatur mitprüfen?', [
     { t: 'Sie entscheidet mit, was angenehm ist, und ich prüfe zusätzlich selbst', ok: true, info: 'Genau. Mitbestimmen erhält ihre Kontrolle. Und weil das Wärmeempfinden im Alter nachlassen kann, prüfst du zusätzlich selbst.' },
     { t: 'Ältere Haut verträgt Wärme besser, da reicht mein Gefühl', ok: false, info: 'Im Gegenteil: Haut wird im Alter dünner und verbrüht leichter.' },
     { t: 'Damit sie sich nicht beschwert, wenn es nicht passt', ok: false, info: 'Es geht nicht darum, Beschwerden zu vermeiden, sondern um ihr Wohlbefinden und ihre Sicherheit.' }], 'waerme');
@@ -864,7 +866,7 @@ async function szene7() {
   if (w.k === 'selbst') { note('Frau Engel wäscht sich das Gesicht selbst, langsam und gründlich.'); log.push('Waschen: Gesicht selbst gelassen'); }
   else { engelGefuehl('scham'); note('Du nimmst ihr den Waschlappen aus der Hand. Frau Engel lässt es geschehen und schaut weg.'); mood = 'misstrauisch'; log.push('Waschen: Gesicht übernommen, obwohl sie es selbst kann'); }
   await sleep(5000);
-  await warum('Warum lässt man Frau Engel das Gesicht selbst waschen?', [
+  if (!PAAR) await warum('Warum lässt man Frau Engel das Gesicht selbst waschen?', [
     { t: 'Was sie selbst kann, soll sie selbst tun. Das erhält ihre Fähigkeiten und ihr Selbstwertgefühl', ok: true, info: 'Richtig: aktivierende, ressourcenorientierte Pflege. Du unterstützt nur, wo sie es braucht.' },
     { t: 'Damit sie sich beschäftigt fühlt, während ich den Rest vorbereite', ok: false, info: 'Es geht nicht ums Beschäftigen. Was erhält es bei ihr?' },
     { t: 'Weil ich beim Gesicht leichter etwas falsch machen kann', ok: false, info: 'Das ist nicht der Grund. Denk daran, was sie noch selbst kann.' }], 'selbst');
@@ -914,6 +916,7 @@ const FLUR_NAMEN = { laeufer: ['der Läufer mit umgeschlagener Ecke', 'den Läuf
 const undListe = l => l.length < 2 ? (l[0] || '') : l.slice(0, -1).join(', ') + ' und ' + l[l.length - 1];
 function flurListe() { const l = ['laeufer', 'kabel', 'pantoffeln'].filter(id => seen.has(id)).map(id => FLUR_NAMEN[id][0]); return undListe(l.length ? l : ['Läufer und Kabel']); }
 function flurBehoben() { return undListe([...behoben].filter(id => FLUR_NAMEN[id]).map(id => FLUR_NAMEN[id][1])); }
+const mischenWahl = l => choose(mischen(l));
 const mischen = a => a.map(x => [Math.random(), x]).sort((p, q) => p[0] - q[0]).map(x => x[1]);
 // Jana fragt nach. Nur was man selbst gesehen oder gehört hat, zählt; Antworten müssen zum eigenen Besuch passen.
 async function janaFragt(text, file, opts) {
@@ -959,7 +962,7 @@ async function szene8() {
     { t: 'Ich habe alles gemacht, das ging schneller', ok: () => waschK === 'alles', dann: waschK === 'alles' ? n('Stimmt. Aber was hätte sie selbst gekonnt? Beim nächsten Mal erst fragen, dann übernehmen.', 5000) : null },
     { t: 'Sie will sich nicht waschen lassen', ok: false, dann: n('Stimmt so nicht mehr. Was hat sie am Ende zugelassen?') },
     { t: 'Sie ist zu schwach dafür', ok: false, dann: n('Was hast du gesehen? Beschreib, statt zu bewerten.') }]);
-  await janaFragt('Ist dir sonst noch was aufgefallen?', 'jana_q_sonst', [
+  if (!PAAR) await janaFragt('Ist dir sonst noch was aufgefallen?', 'jana_q_sonst', [
     { t: 'Sie hat noch einmal nach meinem Namen gefragt', ok: true },
     { t: 'Kaffee und Kuchen standen unberührt da', braucht: ['tassen'], ok: true },
     { t: 'Sie ist dement', ok: false, dann: async () => { await say('jana', 'Moment. Was hast du gesehen und gehört? Eine Diagnose stellt die Ärztin. Und waschen hat sie sich ja lassen.', 'jana_diagnose'); } },
@@ -993,6 +996,7 @@ async function szene8() {
       { t: stimmungOk, ok: true },
       { t: 'Frau E. war unkooperativ.', ok: false, warum: 'wertend' },
       { t: 'Frau E. war gut drauf.', ok: false, warum: 'Umgangssprache, ungenau' }] }];
+  if (PAAR) ZEILEN.splice(0, ZEILEN.length, ...ZEILEN.filter(z => ['Körperpflege', 'Sicherheit', 'Orientierung'].includes(z.was)));
   const wahl = {};
   let offen = ZEILEN;
   for (;;) {
@@ -1013,6 +1017,7 @@ async function szene8() {
   await say('jana', 'Gut beobachtet. Die Stolperfallen sprechen wir beim nächsten Mal mit ihr und der Tochter an. Und das mit dem Namen schreibe ich in die Doku.', 'jana_gut');
   await sleep(800); motor.pause();
 }
+let abendSatz = '';
 async function szene9() {
   // Abends: Frau Engel erzählt ihrer Tochter, wie der Besuch war. Was sie sagt, hängt vom eigenen Handeln ab.
   hotspots = [];
@@ -1046,6 +1051,7 @@ async function szene9() {
   if (q >= 0.75) await A('Also, die darf wiederkommen, Sabine. Die war in Ordnung. … Gute Nacht.', 'fazit_gut');
   else if (q >= 0.5) await A('Na ja. Die ist halt noch jung. Man wird sehen. … Gute Nacht, Sabine.', 'fazit_mittel');
   else await A('Ich will die nicht mehr, Sabine. Dann mache ich es lieber allein. … Gute Nacht.', 'fazit_schlecht');
+  abendSatz = q >= 0.75 ? 'Also, die darf wiederkommen, Sabine. Die war in Ordnung.' : q >= 0.5 ? 'Na ja. Die ist halt noch jung. Man wird sehen.' : 'Ich will die nicht mehr, Sabine. Dann mache ich es lieber allein.';
   log.push(q >= 0.75 ? 'Abends: Frau Engel möchte, dass du wiederkommst' : q >= 0.5 ? 'Abends: Frau Engel ist unentschieden' : 'Abends: Frau Engel will dich nicht mehr');
   note('Sie legt auf. Es ist still in der Wohnung.'); await sleep(3500);
   await fadeTo(1); sicht(false); renderer.domElement.style.filter = ''; await fadeTo(0);
@@ -1065,16 +1071,21 @@ async function ende() {
   const bew = BEREICHE.map(b => { const l = punkte[b.k], n = l.filter(x => x.ok).length, q = l.length ? n / l.length : 1; return { ...b, n, ges: l.length, q, zeichen: q >= 0.75 ? '🟢' : q >= 0.4 ? '🟡' : '🔴' }; });
   const schwach = bew.slice().sort((a, b) => a.q - b.q)[0];
   const auswertung = '<b>Deine Lernziele</b><br>' + bew.map(b => `${b.zeichen} <b>${b.name}</b> (${b.n} von ${b.ges})`).join('<br>') + `<br><br><b>Dein nächster Schritt:</b> ${schwach.name}. ${schwach.tipp}`;
-  const flur = FLUR_DINGE.map(d => `${seen.has(d.id) ? '✔' : '✗'} ${d.name}`).join('<br>');
-  sub(`<b>Ende.</b> Nimm die Brille ab.<br><br>${auswertung}<br><br>Im Flur hast du ${FLUR_DINGE.filter(d => seen.has(d.id)).length} von ${FLUR_DINGE.length} Dingen länger angesehen:<br>${flur}<br><br>Im Bad: ${BAD_DINGE.filter(d => seen.has(d.id)).length} von ${BAD_DINGE.length}:<br>${BAD_DINGE.map(d => `${seen.has(d.id) ? '✔' : '✗'} ${d.name}`).join('<br>')}${seen.has('bad_ungefragt') ? '<br><br>Du hast allein ins Bad geschaut, ohne Frau Engel zu fragen. Es ist ihre Wohnung: Wie hätte sie das wohl empfunden?' : ''}${log.filter(x => typeof x === 'string').length ? '<br><br><b>Deine Entscheidungen:</b><br>' + log.filter(x => typeof x === 'string').join('<br>') : ''}<br><br>Tagesform von Frau Engel am Ende: ${mood}`);
-  if (!renderer.xr.isPresenting && recordings.length) {
-    const box = document.createElement('div'); box.style.cssText = 'max-width:900px;font-size:15px;line-height:1.5;text-align:left';
-    box.innerHTML = '<b>Deine eigenen Worte:</b>';
-    recordings.forEach(r => { const p = document.createElement('div'); p.innerHTML = `<i>${r.prompt}</i><br>`; if (r.audio) { const a = document.createElement('audio'); a.controls = true; a.src = r.audio; p.appendChild(a); } else p.innerHTML += '„' + (r.text || '–') + '“'; box.appendChild(p); });
-    $('sub').after(box);
+  const tf = { gut: 'gut gelaunt', müde: 'müde', misstrauisch: 'misstrauisch' }[mood] || mood;
+  const ergebnis = `<b>Dein Ergebnis · Frau Engel</b> <span style="opacity:.75">(Tagesform: ${tf}, ${new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr)</span><br><br>` +
+    (abendSatz ? `<b>Frau Engel am Abend zu ihrer Tochter:</b><br>„${abendSatz}“<br><br>` : '') + auswertung;
+  sub((PAAR ? 'Nimm die Brille ab. Zeigt euch das Ergebnis und fotografiert es für die Nachbesprechung.<br><br>' : '<b>Ende.</b> Nimm die Brille ab.<br><br>') + ergebnis);
+  for (;;) {
+    const c = await choose([{ label: 'Details: was ich gesehen und entschieden habe', k: 'det' }, { label: PAAR ? 'Nächste Runde: Partnerin oder Partner ist dran' : 'Noch einmal von vorn (andere Tagesform)', k: 'neu' }]);
+    if (c.k === 'neu') break;
+    const flur = FLUR_DINGE.map(d => `${seen.has(d.id) ? '✔' : '✗'} ${d.name}`).join('<br>');
+    const ents = log.filter(x => typeof x === 'string');
+    sub(`<b>Im Flur</b> (${FLUR_DINGE.filter(d => seen.has(d.id)).length} von ${FLUR_DINGE.length} länger angesehen):<br>${flur}<br><br><b>Im Bad</b> (${BAD_DINGE.filter(d => seen.has(d.id)).length} von ${BAD_DINGE.length}):<br>${BAD_DINGE.map(d => `${seen.has(d.id) ? '✔' : '✗'} ${d.name}`).join('<br>')}${seen.has('bad_ungefragt') ? '<br><br>Du hast allein ins Bad geschaut, ohne Frau Engel zu fragen. Es ist ihre Wohnung: Wie hätte sie das wohl empfunden?' : ''}${ents.length ? '<br><br><b>Deine Entscheidungen:</b><br>' + ents.join('<br>') : ''}`);
+    const z = await choose([{ label: '‹ Zurück zum Ergebnis', k: 'z' }]);
+    sub(ergebnis);
   }
-  await choose([{ label: 'Noch einmal von vorn (andere Tagesform)', k: 'neu' }]);
-  location.search = '';
+  const andere = MOODS.filter(m => m !== mood);
+  location.search = (PAAR ? 'paar=1&' : '') + 'tagesform=' + encodeURIComponent(andere[Math.floor(Math.random() * andere.length)]);
 }
 
 $('startBtn').onclick = async () => {
