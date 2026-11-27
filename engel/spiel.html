@@ -151,6 +151,19 @@ function addGang(room, { u, v, hfov, aspect, src }) {
 }
 
 // Standbild im Blickausschnitt eines Panoramas (z. B. Frau Engel im Bad), Lage in Pixeln des Ausschnitts (Breite 1920)
+function addVideoBild(room, { u, v, hfov, src, cx, cy, w, h }) {
+  const D = room.point(u, v, 0).length() * 0.85, px = D * Math.tan(hfov * Math.PI / 360) / 960;
+  const vid = document.createElement('video'); vid.src = src; vid.loop = true; vid.muted = true; vid.playsInline = true; vid.crossOrigin = 'anonymous'; vid.preload = 'auto';
+  const vt = new THREE.VideoTexture(vid); vt.colorSpace = THREE.NoColorSpace;
+  const mat = new THREE.ShaderMaterial({ transparent: true, depthTest: false, depthWrite: false, uniforms: { map: { value: vt } },
+    vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
+    fragmentShader: 'uniform sampler2D map; varying vec2 vUv; void main(){ vec3 c = texture2D(map, vec2(vUv.x * 0.5, vUv.y)).rgb; float a = smoothstep(0.1, 0.9, texture2D(map, vec2(0.5 + vUv.x * 0.5, vUv.y)).r); if (a < 0.01) discard; gl_FragColor = vec4(c, a); }' });
+  const plane = new THREE.Mesh(new THREE.PlaneGeometry(w * px, h * px), mat);
+  plane.position.copy(dirOf(u, v).multiplyScalar(D)); plane.lookAt(0, 0, 0);
+  plane.translateX((cx - 960) * px); plane.translateY(-(cy - 540) * px); plane.renderOrder = 7;
+  room.group.add(plane); plane.userData.vid = vid; windows.push(vid); vid.play().catch(() => {});
+  return plane;
+}
 function addBild(room, { u, v, hfov, aspect, src, cx, cy, w, h }) {
   const D = room.point(u, v, 0).length() * 0.85, px = D * Math.tan(hfov * Math.PI / 360) / 960;
   const tex = new THREE.TextureLoader().load(src); tex.colorSpace = THREE.SRGBColorSpace;
@@ -746,7 +759,12 @@ const BAD_DINGE = [
 async function szene7() {
   // Im Bad: Intimsphäre, Kälte, Selbstständigkeit, Notruf
   const bad = await buildRoom('bad');
-  if (!bad.engel) bad.engel = addBild(bad, { u: 0.46, v: 0.6, hfov: 95, aspect: 16 / 9, src: 'figur/engel_bad_sitz.png?v=5', cx: 1004, cy: 875.5, w: 946, h: 1471 });
+  if (!bad.engel) {
+    bad.engel = new THREE.Group(); bad.group.add(bad.engel);
+    const rest = addBild(bad, { u: 0.46, v: 0.6, hfov: 95, aspect: 16 / 9, src: 'figur/engel_bad_rest.png', cx: 531 + 64.5, cy: 875.5, w: 129, h: 1471 });
+    const leben = addVideoBild(bad, { u: 0.46, v: 0.6, hfov: 95, src: 'figur/engel_bad_leben.mp4', cx: 1010, cy: 873, w: 820, h: 1460 });
+    bad.engel.add(rest, leben);
+  }
   await goRoom('bad', 0.47, STAND, 0.3); hotspots = BAD_DINGE;
   const strasse = playTon('sfx_strasse', 0.35, true);
   let fensterZu = false, tuerZu = false, warm = false;
