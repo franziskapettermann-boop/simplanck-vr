@@ -237,7 +237,8 @@ function choose(list) {
   panel.draw();
   return new Promise(r => choiceResolve = r);
 }
-function pick(i) { const c = currentChoices[i]; if (!c || !choiceResolve) return; $('choices').innerHTML = ''; currentChoices = []; const r = choiceResolve; choiceResolve = null; panel.draw(); log.push(['Wahl', c.label]); r(c); }
+function klick() { try { actx = actx || new AudioContext(); const o = actx.createOscillator(), g = actx.createGain(); o.frequency.value = 880; g.gain.setValueAtTime(0.06, actx.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime + 0.08); o.connect(g).connect(actx.destination); o.start(); o.stop(actx.currentTime + 0.09); } catch {} }
+function pick(i) { const c = currentChoices[i]; if (!c || !choiceResolve) return; klick(); $('choices').innerHTML = ''; currentChoices = []; const r = choiceResolve; choiceResolve = null; panel.draw(); log.push(['Wahl', c.label]); r(c); }
 // Eigene Worte: laut sprechen, wird nur auf dem Gerät aufgenommen. Schreiben nur als Ausweichmöglichkeit.
 let micStream = null, micTried = false;
 const recordings = [];
@@ -386,8 +387,9 @@ const sichtCv = document.createElement('canvas'); sichtCv.width = sichtCv.height
 const sichtTex = new THREE.CanvasTexture(sichtCv);
 const sichtEbene = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 1.2), new THREE.MeshBasicMaterial({ map: sichtTex, transparent: true, depthTest: false, depthWrite: false }));
 sichtEbene.position.z = -0.3; sichtEbene.renderOrder = 19; sichtEbene.visible = false; camera.add(sichtEbene);
-function sicht(alt, kalt = 0) {
+function sicht(alt, kalt = 0, dunkel = 0) {
   const x = sichtCv.getContext('2d'); x.clearRect(0, 0, 512, 512);
+  if (dunkel && !alt && !kalt) { const g = x.createRadialGradient(256, 200, 40, 256, 256, 360); g.addColorStop(0, 'rgba(0,0,0,0.15)'); g.addColorStop(1, `rgba(0,0,0,${dunkel})`); x.fillStyle = g; x.fillRect(0, 0, 512, 512); sichtTex.needsUpdate = true; sichtEbene.visible = true; renderer.domElement.style.filter = ''; return; }
   if (!alt && !kalt) { sichtEbene.visible = false; renderer.domElement.style.filter = ''; return; }
   const g = x.createRadialGradient(256, 256, 60, 256, 256, 330);
   const rand = kalt ? `rgba(${40 - kalt * 20},${70 + kalt * 20},${140 + kalt * 60},${0.55 + kalt * 0.3})` : 'rgba(30,22,5,0.85)';
@@ -395,7 +397,7 @@ function sicht(alt, kalt = 0) {
   x.fillStyle = g; x.fillRect(0, 0, 512, 512); sichtTex.needsUpdate = true; sichtEbene.visible = true;
   renderer.domElement.style.filter = alt ? 'blur(1.8px) contrast(0.85) brightness(0.92)' : '';
 }
-async function fadeTo(o) { const s = fade.material.opacity; for (let t = 0; t <= 1; t += 0.08) { fade.material.opacity = s + (o - s) * t; await sleep(25); } fade.material.opacity = o; }
+async function fadeTo(o) { const s = fade.material.opacity; for (let t = 0; t <= 1; t += 0.14) { fade.material.opacity = s + (o - s) * t; await sleep(25); } fade.material.opacity = o; }
 function placeRoom() {
   if (!current) return;
   if (renderer.xr.isPresenting) {
@@ -404,16 +406,55 @@ function placeRoom() {
     current.group.position.y = p.y + (STAND - eye);
   } else current.group.position.y = STAND;
 }
+// Dampf: weiche Wolken steigen vom Waschbecken auf
+function dampf(room, u, v) {
+  const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d');
+  const g = x.createRadialGradient(32, 32, 2, 32, 32, 32); g.addColorStop(0, 'rgba(255,255,255,0.5)'); g.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = g; x.fillRect(0, 0, 64, 64);
+  const tex = new THREE.CanvasTexture(c), p0 = room.point(u, v, 0).multiplyScalar(0.8);
+  for (let i = 0; i < 18; i++) {
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false, opacity: 0 })); sp.renderOrder = 7;
+    sp.position.copy(p0); room.group.add(sp);
+    const t0 = performance.now() + i * 250, dx = (Math.random() - 0.5) * 0.25;
+    const tick = () => { const t = (performance.now() - t0) / 3500; if (t < 0) return requestAnimationFrame(tick); if (t > 1) { room.group.remove(sp); return; }
+      sp.position.set(p0.x + dx * t, p0.y + t * 0.6, p0.z); const s = 0.15 + t * 0.4; sp.scale.set(s, s, 1); sp.material.opacity = Math.sin(t * Math.PI) * 0.55; requestAnimationFrame(tick); };
+    tick();
+  }
+}
+// Regen auf der Windschutzscheibe: Tropfen laufen langsam herunter (Ebene vor der Kamera, nur oben)
+const regenCv = document.createElement('canvas'); regenCv.width = 512; regenCv.height = 256;
+const regenTex = new THREE.CanvasTexture(regenCv);
+const regen = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 0.8), new THREE.MeshBasicMaterial({ map: regenTex, transparent: true, depthTest: false, depthWrite: false }));
+regen.renderOrder = 18; regen.visible = false;
+const tropfen = Array.from({ length: 70 }, () => ({ x: Math.random() * 512, y: Math.random() * 256, v: 0.2 + Math.random() * 1.5, r: 1 + Math.random() * 2.5 }));
+function regenTick() {
+  if (regen.visible) {
+    const x = regenCv.getContext('2d'); x.clearRect(0, 0, 512, 256);
+    for (const d of tropfen) { d.y += d.v * (Math.random() < 0.3 ? 2 : 0.4); if (d.y > 260) { d.y = -5; d.x = Math.random() * 512; }
+      x.fillStyle = 'rgba(220,230,240,0.35)'; x.beginPath(); x.ellipse(d.x, d.y, d.r, d.r * 1.4, 0, 0, 7); x.fill();
+      x.strokeStyle = 'rgba(220,230,240,0.12)'; x.lineWidth = d.r; x.beginPath(); x.moveTo(d.x, d.y - d.r * 6); x.lineTo(d.x, d.y); x.stroke(); }
+    regenTex.needsUpdate = true;
+  }
+  requestAnimationFrame(regenTick);
+}
+async function gleiten(rein) {
+  if (renderer.xr.isPresenting) return;
+  const a = camera.fov, b = rein ? 55 : 80;
+  for (let t = 0; t <= 1; t += 0.1) { camera.fov = a + (b - a) * t; camera.updateProjectionMatrix(); await sleep(16); }
+}
 async function goRoom(name, lookU, h, lookDown = 0.05) {
-  await fadeTo(1);
+  await Promise.all([gleiten(true), fadeTo(1)]);
   const room = await buildRoom(name);
   if (name === 'wohnzimmer' && !engelVideo) await addEngel(room);
+  if (name === 'auto' && !room.regen) { const p = room.point(0.43, 0.34, 0).multiplyScalar(0.8); regen.position.copy(p); regen.lookAt(0, p.y, 0); regen.scale.setScalar(p.length() * 0.9); room.group.add(regen); room.regen = true; regenTick(); }
   setMarkers(room, []); markerResolve = null;
   if (current) scene.remove(current.group);
   scene.add(room.group); current = room;
   eye = h; placeRoom();
   yaw = (lookU - 0.5) * 2 * Math.PI; pitch = lookDown;
   if (renderer.xr.isPresenting) panel.place();
+  sicht(false, 0, name === 'flur' || name === 'flur2' ? 0.55 : 0);
+  regen.visible = name === 'auto';
+  camera.fov = 80; camera.updateProjectionMatrix();
   await fadeTo(0);
 }
 let last = performance.now();
@@ -519,6 +560,8 @@ function zeigePantoffeln() {
   const flur = rooms.flur; if (!flur) return;
   if (!flur.pant) flur.pant = addBild(flur, { u: 0.491, v: 0.79, hfov: 50, aspect: 16 / 9, src: 'figur/flur_pantoffeln_weg.png', cx: 639, cy: 622.5, w: 1106, h: 709 });
   flur.pant.visible = behoben.has('pantoffeln');
+  if (!flur.lauf) flur.lauf = addBild(flur, { u: 0.44, v: 0.90, hfov: 60, aspect: 16 / 9, src: 'figur/flur_laeufer_glatt.png', cx: 925.5, cy: 674.5, w: 545, h: 677 });
+  flur.lauf.visible = behoben.has('laeufer');
 }
 async function szene3() {
   await goRoom('flur', 0.5, STAND);
@@ -541,8 +584,8 @@ async function szene3() {
     const ziel = await waitMarker();
     if (ziel === 'a_laeufer') {
       const c = await choose([{ label: '„Darf ich die Ecke glattlegen? Da stolpert man leicht.“', k: 'frag' }, { label: 'Die Ecke einfach glattlegen', k: 'einfach' }, { label: 'Lassen, es ist ihre Wohnung', k: 'lass' }]);
-      if (c.k === 'frag') { behoben.add('laeufer'); await say('engel', 'Ja, machen Sie nur. Über den bin ich schon öfter gestolpert.', 'engel_teppich_ok'); log.push('Flur: Läufer nach Rückfrage glattgelegt'); }
-      if (c.k === 'einfach') { behoben.add('laeufer'); note('Du legst die Ecke glatt. Frau Engel schaut kurz herüber.'); log.push('Flur: Läufer glattgelegt, ohne zu fragen'); await sleep(2000); }
+      if (c.k === 'frag') { behoben.add('laeufer'); zeigePantoffeln(); await say('engel', 'Ja, machen Sie nur. Über den bin ich schon öfter gestolpert.', 'engel_teppich_ok'); log.push('Flur: Läufer nach Rückfrage glattgelegt'); }
+      if (c.k === 'einfach') { behoben.add('laeufer'); zeigePantoffeln(); note('Du legst die Ecke glatt. Frau Engel schaut kurz herüber.'); log.push('Flur: Läufer glattgelegt, ohne zu fragen'); await sleep(2000); }
       if (c.k === 'lass') { seen.add('lass_laeufer'); log.push('Flur: Läufer gesehen, aber liegen gelassen'); }
       if (c.k !== 'lass') await warum('Warum ist so eine umgeschlagene Teppichecke für Frau Engel gefährlich?', [
         { t: 'Rollator und Füße bleiben an der Kante hängen, Stürze im Alter haben oft schwere Folgen', ok: true, info: 'Genau. Stolperfallen beseitigen ist ein Kern der Sturzprophylaxe (Expertenstandard Sturzprophylaxe, DNQP). Und immer mit ihr zusammen: Es ist ihre Wohnung.' },
@@ -688,7 +731,7 @@ async function szene6() {
     pkt('sicherheit', c.k === 'hin', 'Nach Beinahe-Sturz sofort bei ihr');
     if (c.k === 'hin') { note('Sie hat sich nichts getan. Ihr Herz klopft, sie hält deinen Arm fest.'); log.push('Beinahe-Sturz am Läufer: sofort hin, gestützt und nachgefragt'); }
     else { note('Frau Engel atmet schwer und hält sich am Rollator fest. Niemand fragt, ob ihr etwas wehtut.'); log.push('Beinahe-Sturz am Läufer: nicht nach ihr geschaut'); mood = mood === 'gut' ? 'müde' : mood; }
-    behoben.add('laeufer'); await sleep(3500);
+    behoben.add('laeufer'); zeigePantoffeln(); await sleep(3500);
   }
   note('Frau Engel ist im Bad verschwunden. Du gehst hinterher.');
   setMarkers(current, [{ u: 0.372, v: 0.80, label: 'Ins Bad', go: 'bad' }]);
@@ -734,7 +777,7 @@ async function szene7() {
     let gezogen = false, gedrängt = false;
     while (!prepFertig) {
       const sek = (performance.now() - tStart) / 1000;
-      if (!gezogen && sek > 18 && !fensterZu) { gezogen = true; seen.add('zug'); await say('engel', 'Brrr … das zieht aber. Mir wird kalt.', 'engel_zieht'); }
+      if (!gezogen && sek > 18 && !fensterZu) { gezogen = true; seen.add('zug'); sicht(false, 0.4); await say('engel', 'Brrr … das zieht aber. Mir wird kalt.', 'engel_zieht'); }
       if (!gedrängt && sek > 55) { gedrängt = true; log.push('Bad: Vorbereitung hat lange gedauert, Frau Engel saß halb nackt und wartete'); await say('engel', 'Wie lang dauert das denn noch? Ich sitz hier halb nackig.', 'engel_dauert'); }
       await sleep(500);
     }
@@ -745,7 +788,7 @@ async function szene7() {
     if (r.c) { if (!erledigt.has('wasser')) { note('Ohne Wasser geht es nicht. Was fehlt noch?'); await sleep(2200); continue; } break; }
     const d = r.go; erledigt.add(d);
     if (d === 'tuer') { tuerZu = true; playTon('sfx_badtuer', 0.7); note('Du schließt die Tür. Frau Engel atmet hörbar auf.'); log.push('Bad: Tür nachträglich geschlossen'); }
-    if (d === 'fenster') { fensterZu = true; strasse.volume = 0.06; note('Das Fenster ist zu. Es wird ruhiger.'); log.push('Bad vorbereitet: Fenster geschlossen'); }
+    if (d === 'fenster') { fensterZu = true; sicht(false); strasse.volume = 0.06; note('Das Fenster ist zu. Es wird ruhiger.'); log.push('Bad vorbereitet: Fenster geschlossen'); }
     if (d === 'warm') { warm = true; note('Du legst ein frisches Handtuch auf die Heizung. Nachher ist es warm.'); log.push('Bad vorbereitet: Handtuch auf der Heizung angewärmt'); }
     if (d === 'matte') { note('Die Matte rutscht auf den Fliesen. Du legst sie zur Seite.'); log.push('Bad vorbereitet: rutschige Badematte weggelegt'); }
     if (d === 'notruf') { seen.add('notruf'); note('Das Notrufarmband liegt auf der Waschmaschine. Darum kümmerst du dich nach dem Waschen.'); }
@@ -759,7 +802,7 @@ async function szene7() {
       if (c.k === 'sie') { await say('engel', 'Ja, so ist’s recht. Nicht zu heiß.', 'engel_temp_ok'); log.push('Wasser: Temperatur von Frau Engel prüfen lassen'); }
       if (c.k === 'ich') { note('Für deine Hand ist es angenehm. Frau Engel sagt nichts dazu.'); log.push('Wasser: Temperatur nur selbst geprüft'); await sleep(2500); }
       pkt('waerme', c.k === 'sie', 'Wassertemperatur');
-      if (c.k === 'heiss') { await say('engel', 'Au! Das ist ja viel zu heiß!', 'engel_heiss'); note('Du lässt kaltes Wasser nachlaufen.'); mood = 'misstrauisch'; log.push('Wasser: zu heiß, Frau Engel hat sich erschreckt'); await sleep(2000); }
+      if (c.k === 'heiss') { dampf(current, 0.505, 0.62); await say('engel', 'Au! Das ist ja viel zu heiß!', 'engel_heiss'); note('Du lässt kaltes Wasser nachlaufen.'); mood = 'misstrauisch'; log.push('Wasser: zu heiß, Frau Engel hat sich erschreckt'); await sleep(2000); }
     }
     await sleep(1800);
   }
@@ -791,10 +834,11 @@ async function szene7() {
   else { await say('engel', 'Hui! Sagen Sie’s doch vorher!', 'engel_ruecken_schreck'); log.push('Rücken: ohne Ankündigung angefangen, Frau Engel hat sich erschreckt'); if (mood === 'gut') mood = 'müde'; }
   await sleep(3000); wasser.pause();
   if (!fensterZu || !warm) {
-    await say('engel', 'Na also. Geht doch. … Huch, mir ist kalt.', 'engel_kalt');
+    sicht(false, 0.7); await say('engel', 'Na also. Geht doch. … Huch, mir ist kalt.', 'engel_kalt');
     const k = await choose([
       { label: 'Ein Handtuch über die Schultern, nur frei machen, was du gerade wäschst', k: 'tuch' },
       { label: '„Wir sind gleich fertig.“', k: 'gleich' }]);
+    sicht(false);
     if (k.k === 'tuch') { note('Frau Engel zieht das Handtuch enger um sich. Es geht besser.'); log.push('Kälte: Handtuch über die Schultern gelegt'); }
     else { note('Frau Engel zittert. Frieren und Scham gehören zusammen.'); log.push('Kälte: nur vertröstet'); mood = 'misstrauisch'; }
     await sleep(3000);
