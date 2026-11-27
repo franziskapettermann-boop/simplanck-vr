@@ -657,7 +657,7 @@ async function szene7() {
   note('Frau Engel sitzt auf dem Hocker am Waschbecken. Den Bademantel hat sie ausgezogen, ein Handtuch liegt über ihren Schultern. Durchs gekippte Fenster zieht es, draußen rauscht der Verkehr.');
   await sleep(6000);
   await say('engel', 'Muss die Tür offen sein?', 'engel_tuer_offen');
-  setMarkers(current, [{ u: 0.80, v: 0.50, label: 'Tür schließen', go: 'tuer', ding: true }]);
+  setMarkers(current, [{ u: 0.86, v: 0.53, label: 'Tür schließen', go: 'tuer', ding: true }]);
   const t0 = await waitAny([{ label: '„Nur kurz, dann geht’s schneller.“', k: 'offen' }, { label: 'Nichts sagen und anfangen', k: 'nix' }]);
   if (t0.go === 'tuer') { tuerZu = true; playTon('sfx_badtuer', 0.7); log.push('Bad: Tür geschlossen, Intimsphäre geschützt'); }
   else { await say('engel', 'Ich steh doch da nicht nackig rum!', 'engel_nackig'); mood = 'misstrauisch'; log.push('Bad: Tür offen gelassen, obwohl Frau Engel gefragt hat'); }
@@ -667,7 +667,7 @@ async function szene7() {
   const DINGE = [
     { u: 0.33, v: 0.30, label: 'Fenster', go: 'fenster', ding: true },
     { u: 0.335, v: 0.60, label: 'Handtuch', go: 'warm', ding: true },
-    { u: 0.48, v: 0.60, label: 'Wasser', go: 'wasser', ding: true },
+    { u: 0.505, v: 0.60, label: 'Wasser', go: 'wasser', ding: true },
     { u: 0.42, v: 0.88, label: 'Badematte', go: 'matte', ding: true },
     { u: 0.66, v: 0.61, label: 'Armband', go: 'notruf', ding: true }];
   const erledigt = new Set(); let temp = null, prepFertig = false;
@@ -763,7 +763,7 @@ async function janaFragt(text, file, opts) {
   }
 }
 async function szene8() {
-  hotspots = [];
+  hotspots = []; waschK = waschK || 'selbst'; notrufK = notrufK || 'liegen';
   note('Du verabschiedest dich von Frau Engel und gehst zurück zum Auto.'); await sleep(2500);
   await goRoom('auto', 0.5, STAND);
   const motor = playTon('sfx_auto', 0.3, true);
